@@ -1,0 +1,86 @@
+/* Default Light Mode */
+body {
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-box {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.logo {
+    width: 150px;
+    margin-bottom: 20px;
+        border-radius: 50%;
+}
+
+h2 {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Dark Mode */
+.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.dark-mode .login-box {
+    background: #1e1e1e;
+    box-shadow: 0px 0px 10px rgba(0, 255, 255, 0.5);
+}
+
+.dark-mode .form-control {
+    background-color: #222;
+    border: 1px solid #00ffff;
+    color: white;
+}
+
+.dark-mode .btn-primary {
+    background-color: #00ffff;
+    color: #121212;
+}
+
+.dark-mode .btn-primary:hover {
+    background-color: #00cccc;
+}
+
+/* Theme Toggle Button */
+.theme-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
