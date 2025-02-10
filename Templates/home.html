@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Postfy - Connect, Share, and Engage{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Connect, Share, and Engage</h1>
+        <p>Join millions of people who use Postfy to share their stories,
+             connect with friends, and build meaningful
+            relationships.</p>
+        <div class="cta-buttons">
+            {% if 'user_id' in session %}
+            <a href="{{ url_for('profile') }}" class="cta-btn">Go to Your Profile</a>
+            {% else %}
+            <a href="{{ url_for('signup') }}" class="cta-btn">Join Now</a>
+            <a href="{{ url_for('login') }}" class="cta-link">Already have an account?</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Postfy{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <h2>Welcome, {{ user.first_name }} {{ user.last_name }}!</h2>
+    <p>Email: {{ user.email }}</p>
+    <p>Gender: {{ user.gender }}</p>
+    <p><a href="{{ url_for('logout') }}" class="cta-btn">Sign Out</a></p>
+</section>
+{% endblock %}

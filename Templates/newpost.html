@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Last Posts - Postfy{% endblock %}
+
+{% block content %}
+<section class="newpost-section">
+    <h2>Last Posts</h2>
+    <p>Here are the latest posts shared by users.</p>
+
+    <!-- Placeholder for posts (you can later replace this with dynamic content from your database) -->
+    <div class="posts-container">
+        <div class="post">
+            <h3>Post Title 1</h3>
+            <p>This is a sample post. More posts will be displayed here.</p>
+        </div>
+        <div class="post">
+            <h3>Post Title 2</h3>
+            <p>This is another sample post. More posts will be displayed here.</p>
+        </div>
+    </div>
+
+    <!-- Button to create a new post -->
+    <div class="cta-buttons">
+        <a href="{{ url_for('create_post') }}" class="cta-btn">Create a New Post</a>
+    </div>
+</section>
+{% endblock %}

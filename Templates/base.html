@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>{% block title %}Postfy{% endblock %}</title>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Logo" class="logo">
+            <span class="brand-name">Postfy</span>
+        </div>
+        <div class="navbar-center">
+            <a href="#" class="nav-link">Last Posts</a>
+            <a href="#" class="nav-link">Friends</a>
+            <a href="#" class="nav-link">Messages</a>
+        </div>
+        <div class="navbar-right">
+            {% if 'user_id' in session %}
+            <!-- If the user is logged in, show 'Sign Out' -->
+            <a href="{{ url_for('logout') }}" class="auth-btn">Sign Out</a>
+            {% else %}
+            <!-- If the user is not logged in, show 'Sign In' and 'Sign Up' -->
+            <a href="{{ url_for('login') }}" class="auth-btn">Sign In</a>
+            <a href="{{ url_for('signup') }}" class="auth-btn sign-up-btn">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+
+</html>
