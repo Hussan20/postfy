@@ -1,3 +1,5 @@
+/* styles.css */
+/*Colors*/
 :root {
     --neon-blue: #00b8f4;
     --neon-pink: #ff57ff;
@@ -18,14 +20,14 @@
     padding: 0;
     box-sizing: border-box;
 }
-
+/* General styles */
 body {
     font-family: 'Roboto', sans-serif;
     margin-top: 70px;
     background-color: var(--dark-background);
     color: var(--text-light);
 }
-
+/* Navbar styles */
 .navbar {
     position: fixed;
     top: 0;
@@ -37,41 +39,17 @@ body {
     padding: 15px;
     background: var(--light-background);
     backdrop-filter: blur(8px);
-    /* Slight blur for sleek look */
     z-index: 100;
     box-shadow: 0 4px 8px var(--shadow);
-    /* Soft shadow for depth */
 }
-
 .navbar-left {
     display: flex;
     align-items: center;
 }
-
-.logo {
-    width: 40px;
-    height: 40px;
-    transition: transform 0.3s ease;
+.navbar-right {
+    display: flex;
+    align-items: center;
 }
-
-.logo:hover {
-    transform: rotate(360deg);
-    /* Fun hover effect on logo */
-}
-
-.brand-name {
-    color: var(--neon-blue);
-    font-size: 26px;
-    margin-left: 10px;
-    font-weight: bold;
-    transition: color 0.3s ease;
-}
-
-.brand-name:hover {
-    color: var(--neon-pink);
-    /* Hover effect on brand name */
-}
-
 .navbar-center {
     display: flex;
     justify-content: center;
@@ -89,17 +67,32 @@ body {
 .nav-link:hover {
     color: var(--neon-pink);
     transform: scale(1.1);
-    /* Slight scale effect */
 }
 
-.navbar-right {
-    display: flex;
-    align-items: center;
+
+/* logo & brand styles */
+.logo {
+    width: 40px;
+    height: 40px;
+    transition: transform 0.3s ease;
 }
+.logo:hover {
+    transform: rotate(360deg);
+}
+.brand-name {
+    color: var(--neon-blue);
+    font-size: 26px;
+    margin-left: 10px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+.brand-name:hover {
+    color: var(--neon-pink);
+}
+
 
 .auth-btn {
     background: linear-gradient(to right, var(--neon-purple), var(--neon-blue));
-    /* Neon gradient for Sign In */
     color: white;
     text-decoration: none;
     padding: 12px 24px;
@@ -108,32 +101,27 @@ body {
     box-shadow: 0 4px 8px var(--shadow);
     transition: background 0.3s ease, transform 0.3s ease;
 }
-
+/* sign in & sign up button styles */
 .auth-btn:hover {
     background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
     transform: translateY(-3px);
-    /* Hover lift effect */
 }
 
 .sign-up-btn {
     background: linear-gradient(to right, var(--neon-orange), var(--neon-yellow));
-    /* New gradient for Sign Up */
     box-shadow: 0 4px 8px var(--shadow);
 }
 
 .sign-up-btn:hover {
     background: linear-gradient(to right, var(--neon-yellow), var(--neon-orange));
     transform: translateY(-3px);
-    /* Hover lift effect */
 }
 
 /* Content area adjustment */
 .content {
     padding-top: 80px;
-    /* Add top padding to prevent overlap with navbar */
 }
 
-/* Footer (if you want to add a footer) */
 footer {
     background: var(--dark-background);
     color: var(--text-light);
@@ -148,15 +136,12 @@ footer {
     justify-content: center;
     align-items: center;
     height: 80vh;
-    /* Takes up most of the screen height */
     background: var(--dark-background);
     padding: 0 20px;
     text-align: center;
 }
-
 .hero-content {
     max-width: 800px;
-    /* Limits the width for better readability */
 }
 
 .hero h1 {
@@ -171,13 +156,12 @@ footer {
     color: var(--text-light);
     margin-bottom: 30px;
 }
-
+/* Call to Action Styles */
 .cta-buttons {
     display: flex;
     justify-content: center;
     gap: 20px;
 }
-
 .cta-btn,
 .cta-link {
     text-decoration: none;
@@ -187,15 +171,12 @@ footer {
     border-radius: 30px;
     transition: background 0.3s ease, color 0.3s ease;
 }
-
 .cta-btn {
     background: var(--neon-pink);
 }
-
 .cta-btn:hover {
     background: var(--neon-blue);
 }
-
 .cta-link {
     color: var(--neon-blue);
     font-weight: bold;
@@ -260,12 +241,11 @@ footer {
     margin-bottom: 10px;
     transition: border 0.3s ease, transform 0.3s ease;
 }
-
+/* sign up form input and select styles */
 .signup-form input:focus,
 .signup-form select:focus {
     border-color: var(--neon-pink);
     transform: scale(1.05);
-    /* Slightly scale up for focus effect */
 }
 
 .signup-form button {
@@ -305,7 +285,7 @@ footer {
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0 4px 10px var(--shadow);
-    max-width: 800px;
+    max-width: 1500px;
     margin: 40px auto;
     text-align: center;
 }

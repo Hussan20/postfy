@@ -1,22 +1,37 @@
 {% extends "base.html" %}
 
-{% block title %}Last Posts - Postfy{% endblock %}
+{% block title %}Latest Posts - Postfy{% endblock %}
 
 {% block content %}
 <section class="newpost-section">
-    <h2>Last Posts</h2>
+    <h2>Latest Posts</h2>
     <p>Here are the latest posts shared by users.</p>
 
-    <!-- Placeholder for posts (you can later replace this with dynamic content from your database) -->
+    <!-- Loop through posts dynamically -->
     <div class="posts-container">
+        {% for post in posts %}
         <div class="post">
-            <h3>Post Title 1</h3>
-            <p>This is a sample post. More posts will be displayed here.</p>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
+            <small>
+                Posted by:
+                {% if post.first_name and post.last_name %}
+                {{ post.first_name }} {{ post.last_name }}
+                {% else %}
+                Unknown User
+                {% endif %}
+                on
+                {% if post.date_posted %}
+                {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
+                {% else %}
+                Unknown Date
+                {% endif %}
+            </small>
+
         </div>
-        <div class="post">
-            <h3>Post Title 2</h3>
-            <p>This is another sample post. More posts will be displayed here.</p>
-        </div>
+        {% else %}
+        <p>No posts yet. Be the first to create one!</p>
+        {% endfor %}
     </div>
 
     <!-- Button to create a new post -->
