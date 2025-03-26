@@ -4,8 +4,30 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime
 from flask_migrate import Migrate
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+
+
+APP_VERSION = "Postfy-0.1_alpha"
+
+app.config['UPLOAD_FOLDER'] = 'static/profile_pics'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower(
+           ) in app.config['ALLOWED_EXTENSIONS']
+
+
+@app.context_processor
+def inject_version():
+    return dict(APP_VERSION=APP_VERSION)
 
 
 app.secret_key = 'your_secret_key'
@@ -33,6 +55,8 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     gender = db.Column(db.String(10), nullable=False)
+    profile_picture = db.Column(
+        db.String(200), nullable=True, default='default.jpg')
 
     def __repr__(self):
         return f'<User {self.first_name} {self.last_name}>'
@@ -44,7 +68,7 @@ class Post(db.Model):
     content = db.Column(db.Text, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_posted = db.Column(
-        db.DateTime, default=datetime.utcnow) 
+        db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref='posts', lazy=True)
 
@@ -87,7 +111,6 @@ def create_post():
     return render_template('create_post.html')
 
 
-
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -98,18 +121,38 @@ def signup():
             request.form['password'])
         gender = request.form['gender']
 
+        # Handle profile picture upload
+        profile_pic = request.files.get('profile_picture')
+        profile_pic_filename = 'default.jpg'  # Default image
+
+        if profile_pic and profile_pic.filename != '' and allowed_file(profile_pic.filename):
+            # Create a secure filename
+            filename = secure_filename(profile_pic.filename)
+            # Make filename unique by adding timestamp
+            filename = f"{int(datetime.utcnow().timestamp())}_{filename}"
+            # Save the file
+            profile_pic.save(os.path.join(
+                app.config['UPLOAD_FOLDER'], filename))
+            profile_pic_filename = filename
+
         existing_user = User.query.filter((User.email == email)).first()
         if existing_user:
             flash("Email already exists!", 'danger')
             return redirect(url_for('signup'))
 
-        new_user = User(first_name=first_name, last_name=last_name,
-                        user_id=email, email=email, password=password, gender=gender)
+        new_user = User(
+            first_name=first_name,
+            last_name=last_name,
+            user_id=email,
+            email=email,
+            password=password,
+            gender=gender,
+            profile_picture=profile_pic_filename
+        )
         db.session.add(new_user)
         db.session.commit()
 
         flash("Account created successfully!", 'success')
-
         return redirect(url_for('login'))
 
     return render_template('signup.html')
@@ -145,11 +188,19 @@ def logout():
 def newposts():
     posts = (
         Post.query.join(User)
-        .add_columns(Post.id, Post.title, Post.content, Post.date_posted, User.first_name, User.last_name)
+        .add_columns(
+            Post.id,
+            Post.title,
+            Post.content,
+            Post.date_posted,
+            Post.user_id,
+            User.first_name,
+            User.last_name
+        )
         .order_by(Post.date_posted.desc())
         .all()
     )
-    return render_template('newpost.html', posts=posts)
+    return render_template('newpost.html', posts=posts, current_user_id=session['user_id'])
 
 
 @app.route('/profile')
@@ -157,6 +208,44 @@ def newposts():
 def profile():
     user = User.query.get(session['user_id'])
     return render_template('profile.html', user=user)
+
+# --------------------------------------------------------------------#
+
+
+@app.route('/edit_post/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get_or_404(post_id)
+
+    if post.user_id != session['user_id']:
+        flash("You can only edit your own posts!", 'danger')
+        return redirect(url_for('newposts'))
+
+    if request.method == 'POST':
+        post.title = request.form['post_title']
+        post.content = request.form['post_content']
+
+        db.session.commit()
+        flash("Post updated successfully!", 'success')
+        return redirect(url_for('newposts'))
+
+    return render_template('edit_post.html', post=post)
+
+
+@app.route('/delete_post/<int:post_id>', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+
+    if post.user_id != session['user_id']:
+        flash("You can only delete your own posts!", 'danger')
+        return redirect(url_for('newposts'))
+
+    db.session.delete(post)
+    db.session.commit()
+
+    flash("Post deleted successfully!", 'success')
+    return redirect(url_for('newposts'))
 
 
 with app.app_context():

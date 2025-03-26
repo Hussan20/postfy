@@ -10,6 +10,7 @@
 
 <body>
     <nav class="navbar">
+
         <div class="navbar-left">
             <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Logo" class="logo">
             <span class="brand-name">Postfy</span>
@@ -34,6 +35,38 @@
     <div class="content">
         {% block content %}{% endblock %}
     </div>
+    <footer style="text-align: center; padding: 20px; background: var(--light-background); color: var(--text-light);">
+        <p>Current Version: {{ APP_VERSION }}</p>
+        <div class="theme-toggle">
+            <button id="theme-toggle-btn">🌙 Dark Mode</button>
+        </div>
+    </footer>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const themeToggleBtn = document.getElementById("theme-toggle-btn");
+            const body = document.body;
+
+            if (localStorage.getItem("theme") === "light") {
+                body.classList.add("light-mode");
+                themeToggleBtn.textContent = "🌞 Light Mode";
+            }
+
+
+            themeToggleBtn.addEventListener("click", function () {
+                body.classList.toggle("light-mode");
+
+                if (body.classList.contains("light-mode")) {
+                    localStorage.setItem("theme", "light");
+                    themeToggleBtn.textContent = "🌞 Light Mode";
+                } else {
+                    localStorage.setItem("theme", "dark");
+                    themeToggleBtn.textContent = "🌙 Dark Mode";
+                }
+            });
+        });
+    </script>
+
 </body>
 
 </html>

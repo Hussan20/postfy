@@ -27,6 +27,7 @@ body {
     background-color: var(--dark-background);
     color: var(--text-light);
 }
+
 /* Navbar styles */
 .navbar {
     position: fixed;
@@ -90,7 +91,32 @@ body {
     color: var(--neon-pink);
 }
 
+/* light mode styles */
+.light-mode {
+    --dark-background: #ffffff;
+    --light-background: #f4f4f4;
+    --text-light: #121212;
+    --shadow: rgba(0, 0, 0, 0.2);
+}
 
+#theme-toggle-btn {
+    display:flex;
+    padding: 10px 15px;
+    margin: 0 10px;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background: var(--neon-blue);
+    color: white;
+    transition: background 0.3s ease;
+}
+
+#theme-toggle-btn:hover {
+    background: var(--neon-pink);
+}
+
+/* Authentication buttons styles */
 .auth-btn {
     background: linear-gradient(to right, var(--neon-purple), var(--neon-blue));
     color: white;
