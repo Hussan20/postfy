@@ -4,41 +4,92 @@
 
 {% block content %}
 <section class="newpost-section">
-    <h2>Latest Posts</h2>
-    <p>Here are the latest posts shared by users.</p>
+    <div class="newpost-header">
+        <h2>Latest Posts</h2>
+        <p>Here are the latest posts shared by users.</p>
+    </div>
 
     <!-- Display flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-    {% for category, message in messages %}
-    <div class="flash-message flash-{{ category }}">
-        {{ message }}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash-message flash-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
     {% endif %}
     {% endwith %}
 
     <!-- Loop through posts dynamically -->
     <div class="posts-container">
         {% for post in posts %}
-        <div class="post">
-            <h3>{{ post.title }}</h3>
-            <p>{{ post.content }}</p>
+        <div class="post {% if post.user_id == current_user_id %}my-post{% endif %}">
+            <div class="post-content-wrapper">
+                <h3>{{ post.title }}</h3>
+                <p>{{ post.content }}</p>
+            </div>
             <div class="post-meta">
-                <small>
-                    Posted by:
-                    {% if post.first_name and post.last_name %}
-                    {{ post.first_name }} {{ post.last_name }}
-                    {% else %}
-                    Unknown User
-                    {% endif %}
-                    on
-                    {% if post.date_posted %}
-                    {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
-                    {% else %}
-                    Unknown Date
-                    {% endif %}
-                </small>
+                <div class="post-info">
+                    <div class="post-author-info">
+                        <div class="post-avatar">
+                            {% if post.profile_picture and post.profile_picture != 'default.jpg' %}
+                            <img src="{{ url_for('static', filename='profile_pics/' + post.profile_picture) }}"
+                                alt="{{ post.first_name }}'s Profile Picture">
+                            {% else %}
+                            <!-- Fallback to UI Avatars -->
+                            <img src="https://ui-avatars.com/api/?name={{ post.first_name }}+{{ post.last_name }}&background=random&color=fff&size=128"
+                                alt="{{ post.first_name }}'s Profile Picture">
+                            {% endif %}
+                        </div>
+                        <span class="post-author">
+                            {% if post.first_name and post.last_name %}
+                            {{ post.first_name }} {{ post.last_name }}
+                            {% else %}
+                            Unknown User
+                            {% endif %}
+                        </span>
+                    </div>
+                    <span class="post-date">
+                        {% if post.date_posted %}
+                        {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        Unknown Date
+                        {% endif %}
+                    </span>
+
+                    <!-- Reaction buttons -->
+                    <div class="post-reactions">
+                        <!-- Like button -->
+                        <form method="POST"
+                            action="{{ url_for('react_to_post', reaction_type='like', post_id=post.id) }}"
+                            class="reaction-form">
+                            <button type="submit"
+                                class="reaction-btn like-btn {% if post.user_reaction == 'like' %}active{% endif %}">
+                                <span class="reaction-icon">👍</span>
+                                <span class="reaction-count">{{ post.like_count }}</span>
+                            </button>
+                        </form>
+
+                        <!-- Dislike button -->
+                        <form method="POST"
+                            action="{{ url_for('react_to_post', reaction_type='dislike', post_id=post.id) }}"
+                            class="reaction-form">
+                            <button type="submit"
+                                class="reaction-btn dislike-btn {% if post.user_reaction == 'dislike' %}active{% endif %}">
+                                <span class="reaction-icon">👎</span>
+                                <span class="reaction-count">{{ post.dislike_count }}</span>
+                            </button>
+                        </form>
+
+                        <!-- Comment count indicator -->
+                        <div class="comment-count-indicator">
+                            <span class="comment-icon">💬</span>
+                            <span class="comment-count">{{ post.comment_count }}</span>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Compare the post user_id with the current user's ID -->
                 {% if post.user_id == current_user_id %}
@@ -55,115 +106,91 @@
                 </div>
                 {% endif %}
             </div>
+
+            <!-- Comments Section -->
+            <div class="comments-section">
+                <h4 class="comments-title">
+                    <span class="comments-icon">💬</span>
+                    Comments ({{ post.comment_count }})
+                </h4>
+
+                <!-- Comment Form -->
+                <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}" class="comment-form">
+                    <div class="comment-form-container">
+                        <textarea name="comment_content" placeholder="Write a comment..." required
+                            class="comment-textarea"></textarea>
+                        <button type="submit" class="comment-submit-btn">
+                            <span class="comment-submit-icon">📤</span>
+                            Post
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Comments List -->
+                <div class="comments-list">
+                    {% if post.comments %}
+                    {% for comment in post.comments %}
+                    <div class="comment {% if comment.user_id == current_user_id %}my-comment{% endif %}">
+                        <div class="comment-header">
+                            <div class="comment-author-info">
+                                <div class="comment-avatar">
+                                    {% if comment.profile_picture and comment.profile_picture != 'default.jpg' %}
+                                    <img src="{{ url_for('static', filename='profile_pics/' + comment.profile_picture) }}"
+                                        alt="{{ comment.first_name }}'s Profile Picture">
+                                    {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ comment.first_name }}+{{ comment.last_name }}&background=random&color=fff&size=128"
+                                        alt="{{ comment.first_name }}'s Profile Picture">
+                                    {% endif %}
+                                </div>
+                                <div class="comment-meta">
+                                    <span class="comment-author">{{ comment.first_name }} {{ comment.last_name }}</span>
+                                    <span class="comment-date">{{ comment.date_created.strftime('%Y-%m-%d %H:%M')
+                                        }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Comment Actions -->
+                            {% if comment.user_id == current_user_id %}
+                            <div class="comment-actions">
+                                <a href="{{ url_for('edit_comment', comment_id=comment.id) }}"
+                                    class="comment-action edit-comment">
+                                    <span class="action-icon">✏️</span>
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}"
+                                    class="delete-comment-form" onsubmit="return confirm('Delete this comment?');">
+                                    <button type="submit" class="comment-action delete-comment">
+                                        <span class="action-icon">🗑️</span>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="comment-content">
+                            {{ comment.content }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="no-comments">
+                        <p>No comments yet. Be the first to comment!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% else %}
-        <p>No posts yet. Be the first to create one!</p>
+        <div class="empty-posts">
+            <div class="empty-icon">📝</div>
+            <p>No posts yet. Be the first to create one!</p>
+        </div>
         {% endfor %}
     </div>
 
     <!-- Button to create a new post -->
     <div class="cta-buttons">
-        <a href="{{ url_for('create_post') }}" class="cta-btn">Create a New Post</a>
+        <a href="{{ url_for('create_post') }}" class="cta-btn create-post-btn">
+            <span>✨</span> Create a New Post
+        </a>
     </div>
 </section>
-
-<style>
-    .post-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 15px;
-    }
-
-    .post-actions {
-        display: flex;
-        gap: 15px;
-    }
-
-    .action-link {
-        display: inline-flex;
-        align-items: center;
-        font-size: 0.9rem;
-        color: var(--text-light);
-        text-decoration: none;
-        padding: 5px 10px;
-        border-radius: 5px;
-        transition: all 0.3s ease;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
-
-    .edit-link:hover {
-        color: var(--neon-blue);
-        background-color: rgba(0, 184, 244, 0.1);
-    }
-
-    .delete-link:hover {
-        color: var(--neon-pink);
-        background-color: rgba(255, 87, 255, 0.1);
-    }
-
-    .action-icon {
-        margin-right: 5px;
-    }
-
-    .delete-form {
-        margin: 0;
-        padding: 0;
-    }
-
-    /* Enhance existing post styles */
-    .post {
-        background: var(--dark-background);
-        padding: 20px;
-        margin: 15px 0;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px var(--shadow);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .post:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px var(--shadow);
-    }
-
-    .post h3 {
-        color: var(--neon-pink);
-        margin-bottom: 10px;
-    }
-
-    .post p {
-        color: var(--text-light);
-        font-size: 1.1rem;
-        margin-bottom: 15px;
-        line-height: 1.6;
-    }
-
-    /* Flash message styling */
-    .flash-message {
-        padding: 10px 15px;
-        margin: 10px 0;
-        border-radius: 5px;
-        text-align: center;
-    }
-
-    .flash-success {
-        background-color: rgba(0, 255, 135, 0.2);
-        color: var(--neon-green);
-        border: 1px solid var(--neon-green);
-    }
-
-    .flash-danger {
-        background-color: rgba(255, 87, 255, 0.2);
-        color: var(--neon-pink);
-        border: 1px solid var(--neon-pink);
-    }
-
-    .flash-info {
-        background-color: rgba(0, 184, 244, 0.2);
-        color: var(--neon-blue);
-        border: 1px solid var(--neon-blue);
-    }
-</style>
 {% endblock %}

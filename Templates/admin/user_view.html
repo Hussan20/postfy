@@ -1,0 +1,148 @@
+{# templates/admin/user_view.html - User Detail View #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}User Details - Postfy Admin{% endblock %}
+{% block page_title %}User Details{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.users') }}" class="admin-btn btn-secondary">
+    <i>⬅️</i> Back to Users
+</a>
+<a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="admin-btn btn-primary">
+    <i>✏️</i> Edit User
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="user-details">
+    <div class="user-profile">
+        <div class="profile-header">
+            <div class="user-avatar">
+                {% if user.profile_picture and user.profile_picture != 'default.jpg' %}
+                <img src="{{ url_for('static', filename='profile_pics/' + user.profile_picture) }}"
+                    alt="{{ user.first_name }}'s Profile Picture">
+                {% else %}
+                <img src="https://ui-avatars.com/api/?name={{ user.first_name }}+{{ user.last_name }}&background=random&color=fff&size=128"
+                    alt="{{ user.first_name }}'s Profile Picture">
+                {% endif %}
+            </div>
+            <div class="user-info">
+                <h2>{{ user.first_name }} {{ user.last_name }}</h2>
+                <p class="user-email">{{ user.email }}</p>
+                <div class="user-stats">
+                    <div class="stat">
+                        <span class="stat-value">{{ post_count }}</span>
+                        <span class="stat-label">Posts</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ user.gender|capitalize }}</span>
+                        <span class="stat-label">Gender</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-details">
+            <div class="details-card">
+                <h3>Account Information</h3>
+
+                <div class="detail-item">
+                    <span class="detail-label">User ID:</span>
+                    <span class="detail-value">{{ user.id }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Username:</span>
+                    <span class="detail-value">{{ user.user_id }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ user.email }}</span>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">Gender:</span>
+                    <span class="detail-value">{{ user.gender|capitalize }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="user-posts">
+        <h3>User's Posts ({{ post_count }})</h3>
+
+        {% if posts %}
+        <div class="posts-list">
+            {% for post in posts %}
+            <div class="post-card">
+                <h4>{{ post.title }}</h4>
+                <div class="post-content">{{ post.content|truncate(150) }}</div>
+                <div class="post-meta">
+                    <span class="post-date">Posted on: {{ post.date_posted }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>This user hasn't created any posts yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="user-actions">
+        <a href="{{ url_for('admin.user_edit', user_id=user.id) }}" class="admin-btn btn-primary">Edit User</a>
+        <button class="admin-btn btn-danger" data-first-name="{{ user.first_name }}"
+            data-last-name="{{ user.last_name }}" data-user-id="{{ user.id }}"
+            onclick="confirmDelete(this.dataset.firstName + ' ' + this.dataset.lastName, this.dataset.userId)">
+            Delete User
+        </button>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h3>Confirm Deletion</h3>
+        <p id="delete-message">Are you sure you want to delete this user?</p>
+        <p class="warning-text">This will permanently delete the user account and all associated posts.</p>
+        <div class="modal-actions">
+            <form id="delete-form" method="POST" action="">
+                <button type="button" class="admin-btn btn-secondary" id="cancel-delete">Cancel</button>
+                <button type="submit" class="admin-btn btn-danger">Delete</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal functionality
+    const modal = document.getElementById('delete-modal');
+    const closeModal = document.getElementsByClassName('close-modal')[0];
+    const cancelDelete = document.getElementById('cancel-delete');
+    const deleteForm = document.getElementById('delete-form');
+    const deleteMessage = document.getElementById('delete-message');
+
+    function confirmDelete(userName, userId) {
+        deleteMessage.textContent = `Are you sure you want to delete ${userName}?`;
+        deleteForm.action = "{{ url_for('admin.user_delete', user_id=0) }}".replace('0', userId);
+        modal.style.display = 'block';
+    }
+
+    closeModal.onclick = function () {
+        modal.style.display = 'none';
+    }
+
+    cancelDelete.onclick = function () {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Comment - Postfy{% endblock %}
+
+{% block content %}
+<section class="comment-edit-section">
+    <h2>Edit Your Comment</h2>
+    <p>Make changes to your comment on the post: <span class="post-reference">{{ post.title }}</span></p>
+
+    <!-- Original post context -->
+    <div class="post-context">
+        <div class="post-excerpt">
+            <h4>{{ post.title }}</h4>
+            <p>{{ post.content|truncate(150) }}</p>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_comment', comment_id=comment.id) }}" class="comment-edit-form">
+        <div class="form-group">
+            <label for="comment_content">Your Comment</label>
+            <textarea id="comment_content" name="comment_content" rows="4" required
+                class="textarea-field">{{ comment.content }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="cta-btn neon-btn">Save Changes</button>
+            <a href="{{ url_for('newposts') }}" class="cta-link back-link">Cancel</a>
+        </div>
+    </form>
+</section>
+
+<style>
+    .comment-edit-section {
+        background: var(--light-background);
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px var(--shadow);
+        max-width: 800px;
+        margin: 40px auto;
+        text-align: center;
+    }
+
+    .post-reference {
+        color: var(--neon-blue);
+        font-weight: bold;
+    }
+
+    .post-context {
+        margin: 25px 0;
+        padding: 15px;
+        background: var(--dark-background);
+        border-radius: 8px;
+        border-left: 3px solid var(--neon-blue);
+        text-align: left;
+    }
+
+    .post-excerpt h4 {
+        color: var(--neon-blue);
+        margin-bottom: 10px;
+        font-size: 1.2rem;
+    }
+
+    .post-excerpt p {
+        color: var(--text-light);
+        opacity: 0.9;
+        font-size: 0.95rem;
+    }
+
+    .comment-edit-form {
+        margin-top: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .textarea-field {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+        background-color: var(--dark-background);
+        color: var(--text-light);
+        border: 1px solid var(--neon-blue);
+        border-radius: 10px;
+        transition: border 0.3s ease, transform 0.3s ease;
+    }
+
+    .textarea-field:focus {
+        border-color: var(--neon-pink);
+        transform: scale(1.05);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .neon-btn {
+        background: linear-gradient(to right, var(--neon-purple), var(--neon-blue));
+        color: white;
+        padding: 12px 24px;
+        border-radius: 30px;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .neon-btn:hover {
+        background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+        transform: translateY(-3px);
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-left: 15px;
+        font-size: 1rem;
+        color: var(--neon-blue);
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .back-link:hover {
+        color: var(--neon-pink);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .comment-edit-section {
+            padding: 25px 15px;
+            margin: 20px auto;
+        }
+    }
+</style>
+{% endblock %}

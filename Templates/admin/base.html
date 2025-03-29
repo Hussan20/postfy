@@ -1,0 +1,86 @@
+{# templates/admin/base.html - Admin layout template with User Management link #}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block admin_title %}Postfy Admin{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    {% block admin_head %}{% endblock %}
+</head>
+
+<body>
+    <div class="admin-layout">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Postfy Admin">
+                </div>
+                <h3>Admin Panel</h3>
+                <div class="admin-username">
+                    Logged in as: {{ session.get('admin_username', 'Unknown') }}
+                </div>
+            </div>
+
+            <div class="sidebar-menu">
+                <div class="menu-label">Core</div>
+                <a href="{{ url_for('admin.dashboard') }}"
+                    class="menu-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <i>📊</i> Dashboard
+                </a>
+
+                <div class="menu-label">Management</div>
+                <a href="{{ url_for('admin.users') }}"
+                    class="menu-item {% if request.endpoint == 'admin.users' or request.endpoint == 'admin.user_view' or request.endpoint == 'admin.user_edit' %}active{% endif %}">
+                    <i>👥</i> Users
+                </a>
+                <a href="#" class="menu-item">
+                    <i>📝</i> Posts
+                </a>
+                <a href="#" class="menu-item">
+                    <i>🚨</i> Reports
+                </a>
+
+                <div class="menu-label">Configuration</div>
+                <a href="#" class="menu-item">
+                    <i>⚙️</i> Settings
+                </a>
+
+                <div class="menu-label">Account</div>
+                <a href="{{ url_for('admin.logout') }}" class="menu-item">
+                    <i>🚪</i> Logout
+                </a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="admin-topbar">
+                <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                <div class="admin-actions">
+                    {% block topbar_actions %}{% endblock %}
+                    <a href="{{ url_for('home') }}" class="admin-btn btn-primary">View Site</a>
+                </div>
+            </div>
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="content-area">
+                {% block admin_content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

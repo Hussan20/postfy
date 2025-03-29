@@ -1,0 +1,90 @@
+{# templates/admin/dashboard.html - Updated to use dynamic data #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Dashboard - Postfy Admin{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="dashboard-overview">
+    <h2>Welcome to the Postfy Admin Dashboard</h2>
+    <p>This is a separate, secure authentication system for administrators.</p>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value">{{ total_posts }}</div>
+            <div class="stat-label">Total Posts</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value">{{ new_users_today }}</div>
+            <div class="stat-label">New Users Today</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-value">{{ report_count }}</div>
+            <div class="stat-label">Reports</div>
+        </div>
+    </div>
+
+    <div class="recent-activity">
+        <h3>Recent Activity</h3>
+
+        <div class="activity-section">
+            <h4>Latest User Registrations</h4>
+            {% if recent_users %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No recent user registrations.</p>
+            {% endif %}
+        </div>
+
+        <div class="activity-section">
+            <h4>Latest Posts</h4>
+            {% if recent_posts %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Posted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for post in recent_posts %}
+                    <tr>
+                        <td>{{ post.title }}</td>
+                        <td>{{ post.first_name }} {{ post.last_name }}</td>
+                        <td>{{ post.date_posted }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No recent posts.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{# templates/admin/login.html #}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postfy Admin - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+
+<body>
+    <div class="admin-container">
+        <div class="admin-logo">
+            <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Postfy Admin">
+        </div>
+
+        <h1 class="admin-title">Postfy Admin Panel</h1>
+        <p class="admin-subtitle">Secure Administrator Access</p>
+
+        <div class="login-card">
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('admin.login') }}">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="login-btn">Sign In</button>
+            </form>
+        </div>
+
+        <a href="{{ url_for('home') }}" class="back-link">← Return to Postfy</a>
+    </div>
+</body>
+
+</html>

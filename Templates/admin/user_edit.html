@@ -1,0 +1,94 @@
+{# templates/admin/user_edit.html - Edit User Form #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Edit User - Postfy Admin{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.user_view', user_id=user.id) }}" class="admin-btn btn-secondary">
+    <i>⬅️</i> Back to User Details
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="user-edit-container">
+    <div class="admin-header">
+        <h2>Edit User: {{ user.first_name }} {{ user.last_name }}</h2>
+        <p>Update user account information</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.user_edit', user_id=user.id) }}" class="admin-form">
+        <div class="form-section">
+            <h3>Personal Information</h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ user.email }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="male" {% if user.gender=='male' %}selected{% endif %}>Male</option>
+                    <option value="female" {% if user.gender=='female' %}selected{% endif %}>Female</option>
+                    <option value="other" {% if user.gender not in ['male', 'female' ] %}selected{% endif %}>Other
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Account Security</h3>
+            <p class="section-info">Leave password field empty to keep the current password</p>
+
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" placeholder="Enter new password">
+                <div class="field-hint">Minimum 8 characters recommended</div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.user_view', user_id=user.id) }}" class="admin-btn btn-secondary">Cancel</a>
+            <button type="submit" class="admin-btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Password confirmation validation
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('.admin-form');
+        const newPassword = document.getElementById('new_password');
+        const confirmPassword = document.getElementById('confirm_password');
+
+        form.addEventListener('submit', function (event) {
+            // If new password is provided, check confirmation
+            if (newPassword.value) {
+                if (newPassword.value !== confirmPassword.value) {
+                    event.preventDefault();
+                    alert('New password and confirmation do not match');
+                    confirmPassword.focus();
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
