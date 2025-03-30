@@ -1,0 +1,198 @@
+{# templates/admin/report_view.html - Individual Report View #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Report Details - Postfy Admin{% endblock %}
+{% block page_title %}Report Details{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.reports') }}" class="admin-btn btn-secondary">
+    <i>⬅️</i> Back to Reports
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="report-details">
+    <div class="admin-header">
+        <div class="report-header-content">
+            <h2>{{ report.title }}</h2>
+            <span class="status-badge status-{{ report.status }}">
+                {{ report.status|capitalize }}
+            </span>
+        </div>
+        <p class="report-meta">
+            Submitted
+            {% if report.user_id %}
+            by <a href="{{ url_for('admin.user_view', user_id=report.user_id) }}">{{ report.first_name }} {{
+                report.last_name }}</a>
+            {% else %}
+            by {{ report.email }}
+            {% endif %}
+            on {{ report.date_created }}
+        </p>
+    </div>
+
+    <div class="report-content-card">
+        <h3>Report Content</h3>
+        <div class="report-content">
+            {{ report.content|replace('\n', '<br>')|safe }}
+        </div>
+    </div>
+
+    <div class="action-card">
+        <h3>Administrative Actions</h3>
+
+        <form method="POST" action="{{ url_for('admin.update_report_status', report_id=report.id) }}"
+            class="status-form">
+            <div class="form-group">
+                <label for="status">Update Status</label>
+                <select id="status" name="status" class="status-select">
+                    <option value="pending" {% if report.status=='pending' %}selected{% endif %}>Pending</option>
+                    <option value="reviewed" {% if report.status=='reviewed' %}selected{% endif %}>Reviewed</option>
+                    <option value="resolved" {% if report.status=='resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+
+            <button type="submit" class="admin-btn btn-primary">Update Status</button>
+        </form>
+    </div>
+
+    {% if report.user_id %}
+    <div class="user-info-card">
+        <h3>User Information</h3>
+        <div class="user-details">
+            <div class="detail-item">
+                <span class="detail-label">User ID:</span>
+                <span class="detail-value">{{ report.user_id }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ report.first_name }} {{ report.last_name }}</span>
+            </div>
+            <a href="{{ url_for('admin.user_view', user_id=report.user_id) }}" class="admin-btn btn-secondary">
+                View User Profile
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .report-details {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .report-header-content {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: rgba(243, 156, 18, 0.2);
+        color: #f39c12;
+    }
+
+    .status-reviewed {
+        background-color: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+    }
+
+    .status-resolved {
+        background-color: rgba(39, 174, 96, 0.2);
+        color: #27ae60;
+    }
+
+    .report-meta {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .report-content-card,
+    .action-card,
+    .user-info-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .report-content-card h3,
+    .action-card h3,
+    .user-info-card h3 {
+        color: var(--admin-primary);
+        margin-bottom: 15px;
+        font-size: 18px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .report-content {
+        white-space: pre-line;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        line-height: 1.6;
+    }
+
+    .status-form {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+    }
+
+    .status-form .form-group {
+        flex: 1;
+        max-width: 200px;
+    }
+
+    .status-select {
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        width: 100%;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        margin-bottom: 5px;
+    }
+
+    .detail-label {
+        width: 100px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .detail-value {
+        color: #333;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .status-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .status-form .form-group {
+            max-width: none;
+        }
+    }
+</style>
+{% endblock %}

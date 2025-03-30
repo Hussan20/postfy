@@ -1,4 +1,4 @@
-{# templates/admin/base.html - Admin layout template with User Management link #}
+{# templates/admin/base.html - Admin layout template with Post Management link #}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -35,15 +35,18 @@
                     class="menu-item {% if request.endpoint == 'admin.users' or request.endpoint == 'admin.user_view' or request.endpoint == 'admin.user_edit' %}active{% endif %}">
                     <i>👥</i> Users
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ url_for('admin.posts') }}"
+                    class="menu-item {% if request.endpoint == 'admin.posts' or request.endpoint == 'admin.post_view' or request.endpoint == 'admin.post_edit' %}active{% endif %}">
                     <i>📝</i> Posts
                 </a>
-                <a href="#" class="menu-item">
+                <a href="{{ url_for('admin.reports') }}"
+                    class="menu-item {% if request.endpoint == 'admin.reports' or request.endpoint == 'admin.report_view' %}active{% endif %}">
                     <i>🚨</i> Reports
                 </a>
 
                 <div class="menu-label">Configuration</div>
-                <a href="#" class="menu-item">
+                <a href="{{ url_for('admin.settings') }}"
+                    class="menu-item {% if request.endpoint == 'admin.settings' or request.endpoint == 'admin.save_theme_settings' %}active{% endif %}">
                     <i>⚙️</i> Settings
                 </a>
 

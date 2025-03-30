@@ -1,0 +1,134 @@
+{# templates/admin/post_edit.html - Edit Post Form #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Edit Post - Postfy Admin{% endblock %}
+{% block page_title %}Edit Post{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('admin.post_view', post_id=post.id) }}" class="admin-btn btn-secondary">
+    <i>⬅️</i> Back to Post Details
+</a>
+{% endblock %}
+
+{% block admin_content %}
+<div class="post-edit-container">
+    <div class="admin-header">
+        <h2>Edit Post</h2>
+        <p>Update post content</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin.post_edit', post_id=post.id) }}" class="admin-form">
+        <div class="form-section">
+            <div class="form-group">
+                <label for="title">Post Title</label>
+                <input type="text" id="title" name="title" value="{{ post.title }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="content">Post Content</label>
+                <textarea id="content" name="content" rows="12" required>{{ post.content }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('admin.post_view', post_id=post.id) }}" class="admin-btn btn-secondary">Cancel</a>
+            <button type="submit" class="admin-btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .post-edit-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        padding: 30px;
+    }
+
+    .admin-header {
+        margin-bottom: 20px;
+    }
+
+    .admin-header h2 {
+        margin-bottom: 5px;
+        color: var(--admin-primary);
+    }
+
+    .admin-header p {
+        color: #666;
+    }
+
+    .form-section {
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--admin-primary);
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        border-color: var(--admin-secondary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .admin-btn {
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        border: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background-color: var(--admin-primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--admin-secondary);
+    }
+
+    .btn-secondary {
+        background-color: #f1f1f1;
+        color: #333;
+    }
+
+    .btn-secondary:hover {
+        background-color: #e1e1e1;
+    }
+</style>
+{% endblock %}

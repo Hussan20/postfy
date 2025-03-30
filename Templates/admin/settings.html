@@ -1,0 +1,432 @@
+{# templates/admin/settings.html - System Settings Page #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}System Settings - Postfy Admin{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block admin_content %}
+<div class="settings-container">
+    <div class="admin-header">
+        <h2>System Settings</h2>
+        <p>Configure application appearance and behavior</p>
+    </div>
+
+    <div class="settings-tabs">
+        <button class="tab-button active" data-tab="theme">Theme Settings</button>
+        <button class="tab-button" data-tab="general">General Settings</button>
+    </div>
+
+    <!-- Theme Settings Panel -->
+    <div class="tab-content active" id="theme-settings">
+        <div class="settings-card">
+            <h3>
+                <i class="settings-icon">🎨</i>
+                Theme Management
+            </h3>
+            <p class="settings-description">Customize the appearance of the main site.</p>
+
+            <form method="POST" action="{{ url_for('admin.save_theme_settings') }}" class="settings-form">
+                <div class="form-section">
+                    <h4>Color Scheme</h4>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="background_color">Background Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="background_color" name="background_color"
+                                    value="{{ theme_settings.get('background_color', '#121212') }}">
+                                <input type="text" id="background_color_text"
+                                    value="{{ theme_settings.get('background_color', '#121212') }}"
+                                    class="color-text-input">
+                            </div>
+                            <span class="setting-hint">Primary background color</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="light_background_color">Light Background Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="light_background_color" name="light_background_color"
+                                    value="{{ theme_settings.get('light_background_color', '#1c1c1c') }}">
+                                <input type="text" id="light_background_color_text"
+                                    value="{{ theme_settings.get('light_background_color', '#1c1c1c') }}"
+                                    class="color-text-input">
+                            </div>
+                            <span class="setting-hint">Secondary background color</span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="text_color">Text Color</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="text_color" name="text_color"
+                                    value="{{ theme_settings.get('text_color', '#e0e0e0') }}">
+                                <input type="text" id="text_color_text"
+                                    value="{{ theme_settings.get('text_color', '#e0e0e0') }}" class="color-text-input">
+                            </div>
+                            <span class="setting-hint">Primary text color</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="primary_color">Primary Accent</label>
+                            <div class="color-input-wrapper">
+                                <input type="color" id="primary_color" name="primary_color"
+                                    value="{{ theme_settings.get('primary_color', '#00b8f4') }}">
+                                <input type="text" id="primary_color_text"
+                                    value="{{ theme_settings.get('primary_color', '#00b8f4') }}"
+                                    class="color-text-input">
+                            </div>
+                            <span class="setting-hint">Brand color and accents</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-preview">
+                    <h4>Live Preview</h4>
+                    <div class="preview-container" id="theme-preview-container">
+                        <div class="preview-navbar">
+                            <div class="preview-brand">Postfy</div>
+                            <div class="preview-nav-links">
+                                <div class="preview-link">Posts</div>
+                                <div class="preview-link">Friends</div>
+                            </div>
+                            <div class="preview-button">Sign In</div>
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-post">
+                                <h3>Sample Post</h3>
+                                <p>This is how content will appear with these settings.</p>
+                                <div class="preview-meta">Posted by User</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="reset-theme-button" class="admin-btn btn-danger">Reset to
+                        Defaults</button>
+                    <button type="submit" class="admin-btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- General Settings Panel (placeholder for future expansion) -->
+    <div class="tab-content" id="general-settings">
+        <div class="settings-card">
+            <h3>
+                <i class="settings-icon">⚙️</i>
+                General Settings
+            </h3>
+            <p class="settings-description">Configure site behavior and functionality.</p>
+            <div class="coming-soon-message">
+                <p>General settings configuration will be available in a future update.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .settings-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .settings-tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .tab-button {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .tab-button:hover {
+        color: var(--admin-secondary);
+    }
+
+    .tab-button.active {
+        color: var(--admin-primary);
+        border-bottom-color: var(--admin-primary);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .settings-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+
+    .settings-card h3 {
+        font-size: 20px;
+        color: var(--admin-primary);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .settings-icon {
+        margin-right: 10px;
+    }
+
+    .settings-description {
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .form-section {
+        margin-bottom: 25px;
+    }
+
+    .form-section h4 {
+        color: #555;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+
+    .form-group {
+        flex: 1;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #444;
+    }
+
+    .setting-hint {
+        display: block;
+        font-size: 12px;
+        color: #777;
+        margin-top: 5px;
+    }
+
+    .color-input-wrapper {
+        display: flex;
+        align-items: center;
+    }
+
+    .color-input-wrapper input[type="color"] {
+        width: 50px;
+        height: 40px;
+        padding: 2px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .color-text-input {
+        margin-left: 10px;
+        width: 100px;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-family: monospace;
+    }
+
+    /* Theme Preview Styles */
+    .theme-preview {
+        margin: 25px 0;
+    }
+
+    .preview-container {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        height: 300px;
+        transition: all 0.3s ease;
+    }
+
+    .preview-navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--preview-light-bg);
+    }
+
+    .preview-brand {
+        font-weight: bold;
+        font-size: 20px;
+        color: var(--preview-primary);
+    }
+
+    .preview-nav-links {
+        display: flex;
+        gap: 15px;
+    }
+
+    .preview-link {
+        color: var(--preview-primary);
+        cursor: pointer;
+    }
+
+    .preview-button {
+        background-color: var(--preview-primary);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 15px;
+        cursor: pointer;
+    }
+
+    .preview-content {
+        padding: 20px;
+        height: calc(100% - 60px);
+        background-color: var(--preview-dark-bg);
+        overflow-y: auto;
+    }
+
+    .preview-post {
+        background-color: var(--preview-light-bg);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .preview-post h3 {
+        color: var(--preview-primary);
+        margin-bottom: 10px;
+        font-size: 18px;
+    }
+
+    .preview-post p {
+        color: var(--preview-text);
+        margin-bottom: 10px;
+    }
+
+    .preview-meta {
+        font-size: 12px;
+        color: var(--preview-text);
+        opacity: 0.8;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .coming-soon-message {
+        padding: 30px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        color: #777;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .form-row {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Remove active class from all buttons and tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                // Add active class to current button
+                this.classList.add('active');
+
+                // Show the corresponding tab content
+                const tabId = this.getAttribute('data-tab') + '-settings';
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Color picker synchronization
+        function setupColorPicker(colorId, textId) {
+            const colorInput = document.getElementById(colorId);
+            const textInput = document.getElementById(textId);
+
+            colorInput.addEventListener('input', function () {
+                textInput.value = this.value;
+                updatePreview();
+            });
+
+            textInput.addEventListener('input', function () {
+                if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+                    colorInput.value = this.value;
+                    updatePreview();
+                }
+            });
+        }
+
+        setupColorPicker('background_color', 'background_color_text');
+        setupColorPicker('light_background_color', 'light_background_color_text');
+        setupColorPicker('text_color', 'text_color_text');
+        setupColorPicker('primary_color', 'primary_color_text');
+
+        // Theme preview update
+        function updatePreview() {
+            const previewContainer = document.getElementById('theme-preview-container');
+            const darkBg = document.getElementById('background_color').value;
+            const lightBg = document.getElementById('light_background_color').value;
+            const textColor = document.getElementById('text_color').value;
+            const primaryColor = document.getElementById('primary_color').value;
+
+            previewContainer.style.setProperty('--preview-dark-bg', darkBg);
+            previewContainer.style.setProperty('--preview-light-bg', lightBg);
+            previewContainer.style.setProperty('--preview-text', textColor);
+            previewContainer.style.setProperty('--preview-primary', primaryColor);
+        }
+
+        // Initialize preview
+        updatePreview();
+
+        // Reset to defaults
+        document.getElementById('reset-theme-button').addEventListener('click', function () {
+            document.getElementById('background_color').value = '#121212';
+            document.getElementById('background_color_text').value = '#121212';
+
+            document.getElementById('light_background_color').value = '#1c1c1c';
+            document.getElementById('light_background_color_text').value = '#1c1c1c';
+
+            document.getElementById('text_color').value = '#e0e0e0';
+            document.getElementById('text_color_text').value = '#e0e0e0';
+
+            document.getElementById('primary_color').value = '#00b8f4';
+            document.getElementById('primary_color_text').value = '#00b8f4';
+
+            updatePreview();
+        });
+    });
+</script>
+{% endblock %}

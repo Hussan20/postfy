@@ -1,0 +1,181 @@
+{# templates/admin/reports.html - Report Management List #}
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Report Management - Postfy Admin{% endblock %}
+{% block page_title %}Report Management{% endblock %}
+
+{% block topbar_actions %}
+<div class="filter-buttons">
+    <a href="{{ url_for('admin.reports') }}" class="filter-btn {% if not status_filter %}active{% endif %}">
+        All Reports
+    </a>
+    <a href="{{ url_for('admin.reports', status='pending') }}"
+        class="filter-btn pending {% if status_filter == 'pending' %}active{% endif %}">
+        Pending <span class="count-badge">{{ pending_count }}</span>
+    </a>
+    <a href="{{ url_for('admin.reports', status='reviewed') }}"
+        class="filter-btn reviewed {% if status_filter == 'reviewed' %}active{% endif %}">
+        Reviewed <span class="count-badge">{{ reviewed_count }}</span>
+    </a>
+    <a href="{{ url_for('admin.reports', status='resolved') }}"
+        class="filter-btn resolved {% if status_filter == 'resolved' %}active{% endif %}">
+        Resolved <span class="count-badge">{{ resolved_count }}</span>
+    </a>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<div class="reports-container">
+    <div class="admin-header">
+        <h2>Content Moderation</h2>
+        <p>Manage user-submitted reports and moderate content</p>
+    </div>
+
+    {% if reports %}
+    <div class="table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Submitted By</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.id }}</td>
+                    <td>{{ report.title }}</td>
+                    <td>
+                        {% if report.user_id %}
+                        <a href="{{ url_for('admin.user_view', user_id=report.user_id) }}">
+                            {{ report.first_name }} {{ report.last_name }}
+                        </a>
+                        {% else %}
+                        {{ report.email }}
+                        {% endif %}
+                    </td>
+                    <td>{{ report.date_created }}</td>
+                    <td>
+                        <span class="status-badge status-{{ report.status }}">
+                            {{ report.status|capitalize }}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <div class="action-buttons">
+                            <a href="{{ url_for('admin.report_view', report_id=report.id) }}"
+                                class="action-btn view-btn" title="View Report">
+                                <i>👁️</i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        {% if status_filter %}
+        <p>No reports with status "{{ status_filter }}" found</p>
+        {% else %}
+        <p>No reports found in the system</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Report-specific styles */
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .filter-btn {
+        padding: 8px 15px;
+        border-radius: 6px;
+        background-color: #f1f1f1;
+        color: #333;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .filter-btn:hover {
+        background-color: #e1e1e1;
+    }
+
+    .filter-btn.active {
+        background-color: var(--admin-primary);
+        color: white;
+    }
+
+    .filter-btn.pending {
+        border-left: 3px solid #f39c12;
+    }
+
+    .filter-btn.reviewed {
+        border-left: 3px solid #3498db;
+    }
+
+    .filter-btn.resolved {
+        border-left: 3px solid #27ae60;
+    }
+
+    .count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 10px;
+        background-color: rgba(0, 0, 0, 0.2);
+        color: inherit;
+        font-size: 12px;
+        margin-left: 8px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: rgba(243, 156, 18, 0.2);
+        color: #f39c12;
+    }
+
+    .status-reviewed {
+        background-color: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+    }
+
+    .status-resolved {
+        background-color: rgba(39, 174, 96, 0.2);
+        color: #27ae60;
+    }
+
+    /* Table styles */
+    .table-container {
+        overflow-x: auto;
+        margin-top: 25px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .filter-buttons {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}

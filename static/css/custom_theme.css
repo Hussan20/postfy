@@ -1,0 +1,16 @@
+/* Custom theme generated from admin settings */
+:root {
+    --dark-background: #121212;
+    --light-background: #1c1c1c;
+    --text-light: #e0e0e0;
+    --neon-blue: #00b8f4;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Light mode overrides remain untouched */
+.light-mode {
+    --dark-background: #ffffff;
+    --light-background: #f4f4f4;
+    --text-light: #121212;
+    --shadow: rgba(0, 0, 0, 0.2);
+}

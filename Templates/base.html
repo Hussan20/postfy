@@ -5,7 +5,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_theme.css') }}">
     <title>{% block title %}Postfy{% endblock %}</title>
+    <style>
+        /* Modal styles for report dialog */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: var(--light-background);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 50%;
+            max-width: 600px;
+            box-shadow: 0 5px 20px var(--shadow);
+            animation: modalAppear 0.3s ease;
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-modal {
+            color: var(--text-light);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: var(--neon-pink);
+        }
+
+        .modal h3 {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            color: var(--neon-blue);
+        }
+
+        .report-form {
+            margin-top: 20px;
+        }
+
+        /* Footer styles */
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Report button styling */
+        .report-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: var(--neon-orange);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-family: inherit;
+        }
+
+        .footer-report {
+            background: linear-gradient(to right, var(--neon-orange), var(--neon-pink));
+        }
+
+        .report-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to right, var(--neon-pink), var(--neon-orange));
+        }
+
+        /* Responsive modal */
+        @media (max-width: 768px) {
+            .modal-content {
+                width: 90%;
+                margin: 20% auto;
+                padding: 20px;
+            }
+
+            .footer-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -36,13 +154,18 @@
         {% block content %}{% endblock %}
     </div>
     <footer style="text-align: center; padding: 20px; background: var(--light-background); color: var(--text-light);">
-        <p>Current Version: {{ APP_VERSION }}</p>
-        <div class="theme-toggle">
-            <button id="theme-toggle-btn">🌙 Dark Mode</button>
+        <div class="footer-content">
+            <p>Current Version: {{ APP_VERSION }}</p>
+            <div class="footer-actions">
+                <button id="report-btn" class="report-btn footer-report">🚨 Report Issue</button>
+                <div class="theme-toggle">
+                    <button id="theme-toggle-btn">🌙 Dark Mode</button>
+                </div>
+            </div>
         </div>
     </footer>
 
-      <script>
+    <script>
         document.addEventListener("DOMContentLoaded", function () {
             const themeToggleBtn = document.getElementById("theme-toggle-btn");
             const body = document.body;
@@ -67,6 +190,61 @@
         });
     </script>
 
+        <!-- Report Modal -->
+        <div id="report-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h3>Report an Issue</h3>
+                <p>Please provide details about the issue you'd like to report.</p>
+
+                <form method="POST" action="{{ url_for('submit_report') }}" class="report-form">
+                    <div class="form-group">
+                        <label for="report_title">Issue Title</label>
+                        <input type="text" id="report_title" name="report_title" required
+                            placeholder="Brief description of the issue" class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="report_content">Details</label>
+                        <textarea id="report_content" name="report_content" required
+                            placeholder="Please describe the issue in detail..." rows="5" class="textarea-field"></textarea>
+                    </div>
+
+                    {% if not 'user_id' in session %}
+                    <div class="form-group">
+                        <label for="report_email">Your Email</label>
+                        <input type="email" id="report_email" name="report_email" required placeholder="Your email address"
+                            class="input-field">
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="cta-btn neon-btn">Submit Report</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Report Modal Script -->
+        <script>
+            // Modal functionality for report
+            const reportModal = document.getElementById('report-modal');
+            const reportBtn = document.getElementById('report-btn');
+            const closeReportModal = reportModal.querySelector('.close-modal');
+
+            reportBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                reportModal.style.display = 'block';
+            });
+
+            closeReportModal.addEventListener('click', function () {
+                reportModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function (e) {
+                if (e.target === reportModal) {
+                    reportModal.style.display = 'none';
+                }
+            });
+        </script>
 </body>
 
 </html>

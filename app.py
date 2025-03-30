@@ -116,9 +116,36 @@ class Reaction(db.Model):
     def __repr__(self):
         return f'<Reaction {self.reaction_type} on Post {self.post_id} by User {self.user_id}>'
 
+# Report model for content moderation
+
+
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    # Can be null if user is logged in
+    email = db.Column(db.String(120), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'user.id'), nullable=True)  # Optional link to user
+    # pending, reviewed, resolved
+    status = db.Column(db.String(20), default='pending')
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='reports', lazy=True)
+
+    def __repr__(self):
+        return f'<Report {self.title}>'
+
 
 with app.app_context():
     db.create_all()
+
+
+@app.template_filter('nl2br')
+def nl2br_filter(s):
+    if s is None:
+        return ""
+    return s.replace('\n', '<br>')
 
 
 @app.route('/')
@@ -463,6 +490,31 @@ def react_to_post(reaction_type, post_id):
 
     # Redirect back to the page where the reaction was made
     return redirect(request.referrer or url_for('newposts'))
+
+
+@app.route('/submit_report', methods=['POST'])
+def submit_report():
+    title = request.form['report_title']
+    content = request.form['report_content']
+
+    # Create new report
+    new_report = Report(
+        title=title,
+        content=content
+    )
+
+    # If user is logged in, link the report to their account
+    if 'user_id' in session:
+        new_report.user_id = session['user_id']
+    # Otherwise, use the provided email
+    else:
+        new_report.email = request.form['report_email']
+
+    db.session.add(new_report)
+    db.session.commit()
+
+    flash('Your report has been submitted. Thank you for helping improve our community!', 'success')
+    return redirect(request.referrer or url_for('home'))
 
 
 if __name__ == '__main__':

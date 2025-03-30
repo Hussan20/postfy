@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime, timedelta
+import json
+import os
 
 # Create a Blueprint for admin routes
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -335,8 +337,420 @@ def user_delete(user_id):
         f'User {user.first_name} {user.last_name} and all their posts have been deleted', 'success')
     return redirect(url_for('admin.users'))
 
+# Post management routes
+
+
+@admin_bp.route('/posts')
+@admin_login_required
+def posts():
+    # Get all posts with optional search/filter
+    search_term = request.args.get('search', '')
+
+    if search_term:
+        # Search by title or content
+        posts_data = db.session.execute(
+            db.text("""
+                SELECT p.id, p.title, p.content, p.date_posted, 
+                       u.first_name, u.last_name, u.id as user_id
+                FROM post p
+                JOIN user u ON p.user_id = u.id
+                WHERE p.title LIKE :search OR p.content LIKE :search
+                ORDER BY p.date_posted DESC
+            """),
+            {"search": f"%{search_term}%"}
+        ).fetchall()
+    else:
+        # Get all posts
+        posts_data = db.session.execute(
+            db.text("""
+                SELECT p.id, p.title, p.content, p.date_posted, 
+                       u.first_name, u.last_name, u.id as user_id
+                FROM post p
+                JOIN user u ON p.user_id = u.id
+                ORDER BY p.date_posted DESC
+            """)
+        ).fetchall()
+
+    # Get post analytics
+    total_posts = len(posts_data)
+
+    # Calculate average post length
+    total_content_length = sum(len(post.content or '')
+                               for post in posts_data) if posts_data else 0
+    avg_post_length = total_content_length / total_posts if total_posts > 0 else 0
+
+    # Get unique author count
+    unique_authors = len(
+        set(post.user_id for post in posts_data)) if posts_data else 0
+
+    # Get posts per day (last 7 days)
+    posts_by_day = {}
+    today = datetime.utcnow().date()
+    for i in range(7):
+        day = today - timedelta(days=i)
+        day_str = day.strftime('%Y-%m-%d')
+        posts_by_day[day_str] = 0
+
+    # Count posts per day
+    for post in posts_data:
+        if post.date_posted:
+            # Handle post.date_posted as a string
+            # Extract just the date part (YYYY-MM-DD)
+            post_date = str(post.date_posted).split()[0]
+            if post_date in posts_by_day:
+                posts_by_day[post_date] += 1
+
+    # Convert to list for template
+    posts_per_day = [{"date": date, "count": count}
+                     for date, count in posts_by_day.items()]
+    posts_per_day.reverse()  # Chronological order
+
+    return render_template('admin/posts.html',
+                           posts=posts_data,
+                           search_term=search_term,
+                           total_posts=total_posts,
+                           avg_post_length=avg_post_length,
+                           unique_authors=unique_authors,
+                           posts_per_day=posts_per_day,
+                           today=today)
+
+
+@admin_bp.route('/posts/view/<int:post_id>')
+@admin_login_required
+def post_view(post_id):
+    # Get post details with author information
+    post_data = db.session.execute(
+        db.text("""
+            SELECT p.id, p.title, p.content, p.date_posted, 
+                   u.first_name, u.last_name, u.id as user_id
+            FROM post p
+            JOIN user u ON p.user_id = u.id
+            WHERE p.id = :post_id
+        """),
+        {"post_id": post_id}
+    ).fetchone()
+
+    if not post_data:
+        flash('Post not found', 'danger')
+        return redirect(url_for('admin.posts'))
+
+    # Get reaction counts
+    like_count = db.session.execute(
+        db.text("""
+            SELECT COUNT(*) FROM reaction 
+            WHERE post_id = :post_id AND reaction_type = 'like'
+        """),
+        {"post_id": post_id}
+    ).scalar() or 0
+
+    dislike_count = db.session.execute(
+        db.text("""
+            SELECT COUNT(*) FROM reaction 
+            WHERE post_id = :post_id AND reaction_type = 'dislike'
+        """),
+        {"post_id": post_id}
+    ).scalar() or 0
+
+    # Get comments for the post
+    comments = db.session.execute(
+        db.text("""
+            SELECT c.id, c.content, c.date_created, 
+                   u.id as user_id, u.first_name, u.last_name, u.profile_picture
+            FROM comment c
+            JOIN user u ON c.user_id = u.id
+            WHERE c.post_id = :post_id
+            ORDER BY c.date_created DESC
+        """),
+        {"post_id": post_id}
+    ).fetchall()
+
+    # Count total comments
+    comment_count = len(comments)
+
+    return render_template('admin/post_view.html',
+                           post=post_data,
+                           like_count=like_count,
+                           dislike_count=dislike_count,
+                           comments=comments,
+                           comment_count=comment_count)
+
+
+@admin_bp.route('/posts/edit/<int:post_id>', methods=['GET', 'POST'])
+@admin_login_required
+def post_edit(post_id):
+    # Get post details
+    post = db.session.execute(
+        db.text("""
+            SELECT p.id, p.title, p.content, p.user_id
+            FROM post p
+            WHERE p.id = :post_id
+        """),
+        {"post_id": post_id}
+    ).fetchone()
+
+    if not post:
+        flash('Post not found', 'danger')
+        return redirect(url_for('admin.posts'))
+
+    if request.method == 'POST':
+        # Get form data
+        title = request.form['title']
+        content = request.form['content']
+
+        # Update post
+        db.session.execute(
+            db.text("""
+                UPDATE post 
+                SET title = :title, content = :content
+                WHERE id = :post_id
+            """),
+            {
+                "title": title,
+                "content": content,
+                "post_id": post_id
+            }
+        )
+
+        db.session.commit()
+        flash('Post updated successfully', 'success')
+        return redirect(url_for('admin.post_view', post_id=post_id))
+
+    return render_template('admin/post_edit.html', post=post)
+
+
+@admin_bp.route('/posts/delete/<int:post_id>', methods=['POST'])
+@admin_login_required
+def post_delete(post_id):
+    # Check if post exists
+    post = db.session.execute(
+        db.text("SELECT id, title FROM post WHERE id = :post_id"),
+        {"post_id": post_id}
+    ).fetchone()
+
+    if not post:
+        flash('Post not found', 'danger')
+        return redirect(url_for('admin.posts'))
+
+    # Delete post
+    db.session.execute(
+        db.text("DELETE FROM post WHERE id = :post_id"),
+        {"post_id": post_id}
+    )
+
+    db.session.commit()
+    flash(f'Post "{post.title}" has been deleted', 'success')
+    return redirect(url_for('admin.posts'))
+
 # Create first admin user command
 
+# Reports management routes
+
+
+@admin_bp.route('/reports')
+@admin_login_required
+def reports():
+    # Get all reports with optional filter
+    status_filter = request.args.get('status', '')
+
+    if status_filter:
+        # Filter by status
+        reports_data = db.session.execute(
+            db.text("""
+                SELECT r.id, r.title, r.content, r.email, r.user_id, r.status, r.date_created,
+                       u.first_name, u.last_name
+                FROM report r
+                LEFT JOIN user u ON r.user_id = u.id
+                WHERE r.status = :status
+                ORDER BY r.date_created DESC
+            """),
+            {"status": status_filter}
+        ).fetchall()
+    else:
+        # Get all reports
+        reports_data = db.session.execute(
+            db.text("""
+                SELECT r.id, r.title, r.content, r.email, r.user_id, r.status, r.date_created,
+                       u.first_name, u.last_name 
+                FROM report r
+                LEFT JOIN user u ON r.user_id = u.id
+                ORDER BY r.date_created DESC
+            """)
+        ).fetchall()
+
+    # Get counts for each status
+    pending_count = db.session.execute(
+        db.text("SELECT COUNT(*) FROM report WHERE status = 'pending'")
+    ).scalar() or 0
+
+    reviewed_count = db.session.execute(
+        db.text("SELECT COUNT(*) FROM report WHERE status = 'reviewed'")
+    ).scalar() or 0
+
+    resolved_count = db.session.execute(
+        db.text("SELECT COUNT(*) FROM report WHERE status = 'resolved'")
+    ).scalar() or 0
+
+    return render_template('admin/reports.html',
+                           reports=reports_data,
+                           status_filter=status_filter,
+                           pending_count=pending_count,
+                           reviewed_count=reviewed_count,
+                           resolved_count=resolved_count)
+
+
+@admin_bp.route('/reports/view/<int:report_id>')
+@admin_login_required
+def report_view(report_id):
+    # Get report details
+    report_data = db.session.execute(
+        db.text("""
+            SELECT r.id, r.title, r.content, r.email, r.user_id, r.status, r.date_created,
+                   u.first_name, u.last_name
+            FROM report r
+            LEFT JOIN user u ON r.user_id = u.id
+            WHERE r.id = :report_id
+        """),
+        {"report_id": report_id}
+    ).fetchone()
+
+    if not report_data:
+        flash('Report not found', 'danger')
+        return redirect(url_for('admin.reports'))
+
+    return render_template('admin/report_view.html', report=report_data)
+
+
+@admin_bp.route('/reports/update-status/<int:report_id>', methods=['POST'])
+@admin_login_required
+def update_report_status(report_id):
+    new_status = request.form['status']
+
+    # Update report status
+    db.session.execute(
+        db.text("""
+            UPDATE report
+            SET status = :status
+            WHERE id = :report_id
+        """),
+        {"status": new_status, "report_id": report_id}
+    )
+
+    db.session.commit()
+    flash(f'Report status updated to {new_status}', 'success')
+    return redirect(url_for('admin.report_view', report_id=report_id))
+
+
+@admin_bp.route('/settings')
+@admin_login_required
+def settings():
+    """Admin system settings page"""
+    # Load current theme settings
+    theme_settings = load_theme_settings()
+
+    return render_template('admin/settings.html', theme_settings=theme_settings)
+
+
+@admin_bp.route('/settings/theme', methods=['POST'])
+@admin_login_required
+def save_theme_settings():
+    """Save theme settings"""
+    # Get theme settings from form
+    theme_settings = {
+        'background_color': request.form.get('background_color', '#121212'),
+        'light_background_color': request.form.get('light_background_color', '#1c1c1c'),
+        'text_color': request.form.get('text_color', '#e0e0e0'),
+        'primary_color': request.form.get('primary_color', '#00b8f4')
+    }
+
+    # Save settings to file
+    save_settings_to_file(theme_settings)
+
+    # Generate CSS file
+    generate_custom_css(theme_settings)
+
+    flash('Theme settings updated successfully', 'success')
+    return redirect(url_for('admin.settings'))
+
+# Add these utility functions at the end of admin.py
+
+
+def load_theme_settings():
+    """Load theme settings from file"""
+    # Get the app instance
+    app = current_app._get_current_object()
+    settings_file = os.path.join(
+        app.static_folder, 'settings', 'theme_settings.json')
+
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+
+    # Default settings
+    default_settings = {
+        'background_color': '#121212',
+        'light_background_color': '#1c1c1c',
+        'text_color': '#e0e0e0',
+        'primary_color': '#00b8f4'
+    }
+
+    # Try to load settings from file
+    try:
+        if os.path.exists(settings_file):
+            with open(settings_file, 'r') as f:
+                return json.load(f)
+        return default_settings
+    except Exception as e:
+        print(f"Error loading theme settings: {e}")
+        return default_settings
+
+
+def save_settings_to_file(settings):
+    """Save theme settings to file"""
+    # Get the app instance
+    app = current_app._get_current_object()
+    settings_file = os.path.join(
+        app.static_folder, 'settings', 'theme_settings.json')
+
+    # Create directory if it doesn't exist
+    os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+
+    try:
+        with open(settings_file, 'w') as f:
+            json.dump(settings, f, indent=4)
+    except Exception as e:
+        print(f"Error saving theme settings: {e}")
+
+
+def generate_custom_css(settings):
+    """Generate custom CSS from theme settings"""
+    css_template = """/* Custom theme generated from admin settings */
+:root {
+    --dark-background: %(background_color)s;
+    --light-background: %(light_background_color)s;
+    --text-light: %(text_color)s;
+    --neon-blue: %(primary_color)s;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* Light mode overrides remain untouched */
+.light-mode {
+    --dark-background: #ffffff;
+    --light-background: #f4f4f4;
+    --text-light: #121212;
+    --shadow: rgba(0, 0, 0, 0.2);
+}
+"""
+
+    css_content = css_template % settings
+
+    # Get the app instance
+    app = current_app._get_current_object()
+    css_file = os.path.join(app.static_folder, 'css', 'custom_theme.css')
+
+    try:
+        with open(css_file, 'w') as f:
+            f.write(css_content)
+    except Exception as e:
+        print(f"Error generating custom CSS: {e}")
 
 def create_admin_cli(app):
     @app.cli.command('create-admin')
