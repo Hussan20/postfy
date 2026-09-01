@@ -143,9 +143,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Team
 
 Developed with ❤️ by:
-- Hassan
-- Hussain
-- Laila
-- Sara
-- Maria
-- Teba
+- Hassan (backend)
+- Hussain (backend)
+- aymen (security)
+- Laila (frontend)
+- Sara (frontend)
+- Maria (database)
+- Teba(database)
