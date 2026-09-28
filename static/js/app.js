@@ -487,15 +487,22 @@
         document.addEventListener('click', async (e) => {
             const copy = e.target.closest('[data-copy]');
             if (copy) {
-                await copyText(copy.dataset.copy);
+                await copyText(new URL(copy.dataset.copy, location.href).href);
                 toast('Link copied to clipboard', 'success', 2500);
                 return;
             }
             const share = e.target.closest('[data-share]');
             if (share) {
-                const url = share.dataset.share, title = share.dataset.shareTitle || document.title;
+                const url = new URL(share.dataset.share, location.href).href;
+                const title = share.dataset.shareTitle || document.title;
                 if (navigator.share && matchMedia('(pointer: coarse)').matches) {
-                    try { await navigator.share({ title, url }); return; } catch { /* cancelled */ return; }
+                    try {
+                        await navigator.share({ title, url });
+                        return;
+                    } catch (err) {
+                        if (err?.name === 'AbortError') return;
+                        // Sharing unavailable here: fall back to copying the link
+                    }
                 }
                 await copyText(url);
                 toast('Link copied — share it anywhere!', 'success', 2500);
@@ -1590,24 +1597,6 @@
             links.forEach((l) => { const s = $(l.getAttribute('href')); if (s) io.observe(s); });
         }
 
-        // Animated counters on the landing page
-        const counters = $$('[data-count-up]');
-        if (counters.length && 'IntersectionObserver' in window && !reducedMotion()) {
-            const io = new IntersectionObserver((entries) => entries.forEach((en) => {
-                if (!en.isIntersecting) return;
-                io.unobserve(en.target);
-                const end = Number(en.target.dataset.countUp) || 0;
-                const start = performance.now();
-                const tick = (now) => {
-                    const p = Math.min(1, (now - start) / 1100);
-                    en.target.textContent = compact(Math.round(end * (1 - Math.pow(1 - p, 3))));
-                    if (p < 1) requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
-            }));
-            counters.forEach((c) => io.observe(c));
-        }
-
         // Jump to a linked comment
         if (location.hash.startsWith('#comment-')) {
             const target = $(location.hash);
@@ -1772,7 +1761,7 @@
                 const a = e.target.closest('a[href]');
                 if (!a) return;
                 const href = a.getAttribute('href');
-                if (/\/(logout|settings\/export)\/?$/.test(href)) {
+                if (/\/(logout|settings\/export)(\/|\/index\.html)?$/.test(href)) {
                     e.preventDefault();
                     if (href.includes('logout')) {
                         toastAfterNavigation('Signed out of the demo. Come back soon! 👋', 'info');
@@ -1780,7 +1769,7 @@
                     } else {
                         toast("Data export isn't available in the demo.", 'info');
                     }
-                } else if (/\/(post|edit_post)\/9\d{5}\/?$/.test(href)) {
+                } else if (/\/(post|edit_post)\/9\d{5}(\/|\/index\.html)?$/.test(href)) {
                     e.preventDefault();
                     toast('This post only exists in your browser — it disappears when you leave the page.', 'info');
                 }

@@ -10,10 +10,13 @@ Usage:
     python tools/build_static.py --out _site --base /postfy
 Then preview it with:
     python tools/build_static.py --serve
+Use --relative for a copy with relative links that works from any folder or
+static host (it can even be opened straight from disk).
 """
 import argparse
 import json
 import os
+import posixpath
 import re
 import shutil
 import sys
@@ -36,6 +39,8 @@ def parse_args():
                         help='URL path the site is served from, e.g. /postfy for user.github.io/postfy')
     parser.add_argument('--site-url', default=os.environ.get('PAGES_SITE_URL', 'https://hussan20.github.io'),
                         help='origin used for absolute links (share / copy link)')
+    parser.add_argument('--relative', action='store_true',
+                        help='use relative links (…/index.html) so the site works from any folder')
     parser.add_argument('--serve', action='store_true', help='build, then serve the result on localhost:8000')
     return parser.parse_args()
 
@@ -123,6 +128,9 @@ def main():
         """/u/nour?tab=likes -> u/nour/q-tab-likes/index.html"""
         parts = urlsplit(page)
         segs = [unquote(s) for s in parts.path.split('/') if s]
+        if args.relative:
+            # Keep folder names ASCII so any host (or a zip file) can serve them
+            segs = [seg if seg.isascii() else quote(seg, safe='').replace('%', '_') for seg in segs]
         if parts.query:
             segs.append('q-' + re.sub(r'[^\w-]+', '-', unquote(parts.query)).strip('-'))
         if segs and '.' in segs[-1] and not parts.query:
@@ -131,6 +139,8 @@ def main():
 
     def public_url(page):
         rel, is_file = output_rel(page)
+        if args.relative:
+            return rel
         if is_file:
             return base + '/' + quote(rel)
         folder = rel[:-len('index.html')]
@@ -161,7 +171,9 @@ def main():
         enqueue(f'/edit_post/{pid}')
 
     # Any URL under the base path (used for rewriting) / only real links (used for crawling)
-    link_re = re.compile(re.escape(base) + r'/[^"\'\s<>()]*' if base else r'(?<=["\'])/[^"\'\s<>()]*')
+    origin = r'(?P<origin>https?://[^/"\'\s<>]+)?'
+    link_re = re.compile(origin + re.escape(base) + r'/[^"\'\s<>()]*' if base else
+                         r'(?<=["\'])' + origin + r'/[^"\'\s<>()]*')
     href_re = re.compile(r'href="(' + re.escape(base) + r'/[^"#]*)')
 
     with app.app_context():
@@ -189,14 +201,26 @@ def main():
     mapping = {p: public_url(p) for p in pages}
     mapping.update({p: public_url(t) for p, t in redirects.items() if t in pages})
 
-    def rewrite(html):
+    def relative_target(url):
+        """Relative-mode file path for a URL that isn't a crawled page."""
+        path = urlsplit(url.replace('&amp;', '&')).path
+        path = path[len(base):] if base and path.startswith(base) else path
+        if path.startswith('/static/') or '.' in path.rsplit('/', 1)[-1]:
+            return path.lstrip('/')
+        return (path.strip('/') + '/index.html').lstrip('/')
+
+    def rewrite(html, page_rel='index.html'):
+        page_dir = posixpath.dirname(page_rel) or '.'
+
         def swap(m):
             raw = m.group(0)
-            url, _, fragment = raw.partition('#')
+            host = m.group('origin') or ''
+            url, _, fragment = raw[len(host):].partition('#')
+            fragment = '#' + fragment if fragment else ''
             target = mapping.get(normalize(url))
-            if not target:
-                return raw
-            return target + ('#' + fragment if fragment else '')
+            if not args.relative:
+                return host + target + fragment if target else raw
+            return posixpath.relpath(target or relative_target(url), page_dir) + fragment
         return link_re.sub(swap, html)
 
     if os.path.exists(out):
@@ -207,20 +231,23 @@ def main():
         path = os.path.join(out, rel)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
-            f.write(rewrite(body))
+            f.write(rewrite(body, rel))
     for page, target in redirects.items():
         if target not in pages:
             continue
         rel, _ = output_rel(page)
         path = os.path.join(out, rel)
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        href = posixpath.relpath(mapping[page], posixpath.dirname(rel) or '.') if args.relative else mapping[page]
         with open(path, 'w', encoding='utf-8') as f:
-            f.write(f'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url={mapping[page]}">'
-                    f'<link rel="canonical" href="{mapping[page]}"><title>Redirecting…</title>'
-                    f'<a href="{mapping[page]}">Continue</a>')
-    with open(os.path.join(out, '404.html'), 'w', encoding='utf-8') as f:
-        f.write(rewrite(not_found))
-    open(os.path.join(out, '.nojekyll'), 'w').close()
+            f.write(f'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url={href}">'
+                    f'<link rel="canonical" href="{href}"><title>Redirecting…</title>'
+                    f'<a href="{href}">Continue</a>')
+    if not args.relative:
+        # GitHub Pages serves 404.html for any missing path, so it needs absolute links
+        with open(os.path.join(out, '404.html'), 'w', encoding='utf-8') as f:
+            f.write(rewrite(not_found))
+        open(os.path.join(out, '.nojekyll'), 'w').close()
 
     # Static assets (without anyone's uploaded photos) + the demo's own uploads
     shutil.copytree(os.path.join(ROOT, 'static'), os.path.join(out, 'static'),
@@ -231,7 +258,8 @@ def main():
     shutil.rmtree(work, ignore_errors=True)
     total = sum(len(files) for _, _, files in os.walk(out))
     print(f'Built {len(pages)} pages ({len(redirects)} redirects, {total} files) into {out}')
-    print(f'Entry point: {args.site_url.rstrip("/")}{base}/')
+    print('Entry point: ' + (os.path.join(out, 'index.html') if args.relative
+                             else f'{args.site_url.rstrip("/")}{base}/'))
 
     if args.serve:
         serve(out, base)

@@ -892,7 +892,7 @@ mark {
 
 .topbar {
     position: sticky;
-    top: 0;
+    top: env(safe-area-inset-top, 0px);
     z-index: 50;
     height: var(--topbar-h);
     background: var(--glass);
@@ -3890,7 +3890,7 @@ a.stat:hover {
 @keyframes count-bump { 40% { transform: translateY(-4px); opacity: .4; } }
 @keyframes shimmer { to { transform: translateX(100%); } }
 @keyframes float { 50% { transform: translate(0, -14px); } }
-@keyframes hero-card { from { opacity: 0; transform: translateY(40px) rotate(0); } }
+@keyframes hero-card { from { transform: translateY(40px) rotate(0); } }
 
 @keyframes burst {
     0% { opacity: 0; transform: scale(.3); }

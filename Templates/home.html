@@ -23,10 +23,10 @@
                     <a href="{{ url_for('login') }}" class="btn btn--outline btn--lg">{{ ui.icon('log-in') }} Sign in</a>
                 </div>
                 <div class="hero__stats">
-                    <div><strong data-count-up="{{ stats.users }}">{{ stats.users|compact }}</strong><span>Members</span></div>
-                    <div><strong data-count-up="{{ stats.posts }}">{{ stats.posts|compact }}</strong><span>Posts shared</span></div>
-                    <div><strong data-count-up="{{ stats.comments }}">{{ stats.comments|compact }}</strong><span>Conversations</span></div>
-                    <div><strong data-count-up="{{ stats.reactions }}">{{ stats.reactions|compact }}</strong><span>Reactions</span></div>
+                    <div><strong>{{ stats.users|compact }}</strong><span>Members</span></div>
+                    <div><strong>{{ stats.posts|compact }}</strong><span>Posts shared</span></div>
+                    <div><strong>{{ stats.comments|compact }}</strong><span>Conversations</span></div>
+                    <div><strong>{{ stats.reactions|compact }}</strong><span>Reactions</span></div>
                 </div>
             </div>
 

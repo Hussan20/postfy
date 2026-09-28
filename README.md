@@ -120,6 +120,8 @@ Preview the static build on your own machine with:
 ```bash
 python tools/build_static.py --serve
 ```
+Add `--relative` to build a copy with relative links that works from any folder or static host.
+
 
 ## Keyboard shortcuts
 

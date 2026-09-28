@@ -23,7 +23,9 @@
         (function () {
             var d = document.documentElement, s = {};
             try { s = JSON.parse(localStorage.getItem('postfy:appearance') || '{}'); } catch (e) { }
-            var theme = s.theme || localStorage.getItem('theme') || 'system';
+            var legacy = null;
+            try { legacy = localStorage.getItem('theme'); } catch (e) { }
+            var theme = s.theme || legacy || 'system';
             if (theme === 'system') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
             d.setAttribute('data-theme', theme);
             if (s.accent) d.setAttribute('data-accent', s.accent);
