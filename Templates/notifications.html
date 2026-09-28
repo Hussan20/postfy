@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set active_nav = 'notifications' %}
+
+{% block title %}Notifications · Postfy{% endblock %}
+
+{% macro notification(n) %}
+{%- set icon_name = {'like': 'thumbs-up', 'comment': 'message', 'follow': 'user-plus', 'mention': 'at-sign'}.get(n.kind, 'bell') -%}
+{%- set target = url_for('user_profile', username=n.actor.handle) if n.kind == 'follow' or not n.post
+    else url_for('post_detail', post_id=n.post_id) ~ ('#comment-' ~ n.comment_id if n.comment_id else '') -%}
+<li class="notif{% if not n.is_read %} is-unread{% endif %}">
+    <a href="{{ url_for('user_profile', username=n.actor.handle) }}" class="notif__visual" aria-label="{{ n.actor.full_name }}">
+        {{ ui.avatar(n.actor, 'md') }}
+        <span class="notif__icon notif__icon--{{ n.kind }}">{{ ui.icon(icon_name) }}</span>
+    </a>
+    <div class="notif__body">
+        <p class="notif__text">
+            <a href="{{ url_for('user_profile', username=n.actor.handle) }}" dir="auto">{{ n.actor.full_name }}</a>
+            {% if n.kind == 'like' %}liked your post
+            {% elif n.kind == 'comment' %}commented on your post
+            {% elif n.kind == 'follow' %}started following you
+            {% elif n.kind == 'mention' %}mentioned you {{ 'in a comment on' if n.comment_id else 'in' }}
+            {% endif %}
+            {% if n.post and n.kind != 'follow' %}<a href="{{ target }}" dir="auto">“{{ n.post.title|truncate(60) }}”</a>{% endif %}
+        </p>
+        {% if n.comment %}<div class="notif__snippet" dir="auto">{{ n.comment.content|truncate(160) }}</div>{% endif %}
+        <span class="notif__time">{{ ui.time_tag(n.created_at) }}</span>
+    </div>
+    {% if n.kind == 'follow' %}{{ ui.follow_button(n.actor) }}{% endif %}
+</li>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Notifications</h1>
+        <p class="page-head__sub">{% if unread %}{{ unread|length }} new since your last visit{% else %}You're all caught up{% endif %}</p>
+    </div>
+</div>
+
+{% if unread or earlier %}
+<div class="card" style="overflow:hidden">
+    {% if unread %}
+    <div class="group-label">New</div>
+    <ul class="notif-list">{% for n in unread %}{{ notification(n) }}{% endfor %}</ul>
+    {% endif %}
+    {% if earlier %}
+    <div class="group-label">Earlier</div>
+    <ul class="notif-list">{% for n in earlier %}{{ notification(n) }}{% endfor %}</ul>
+    {% endif %}
+</div>
+{% else %}
+<div class="card">
+    {{ ui.empty_state('bell', 'No notifications yet', 'When people like or comment on your posts, mention you, or follow you, you will see it here.', url_for('people'), 'Find people to follow') }}
+</div>
+{% endif %}
+{% endblock %}

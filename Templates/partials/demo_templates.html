@@ -1,0 +1,12 @@
+{% import '_macros.html' as ui %}
+{# Only rendered in the static GitHub Pages demo (config.STATIC_DEMO).
+   The demo has no server, so app.js clones these to show new content. #}
+{% if demo_samples is defined %}
+<div hidden data-demo-root data-home="{{ url_for('newposts') }}" data-landing="{{ url_for('home') }}"></div>
+{% if current_user %}
+<template id="tpl-post">{{ ui.post_card(demo_samples.post) }}</template>
+<template id="tpl-comment">{{ ui.comment_item(demo_samples.comment, demo_samples.post) }}</template>
+<template id="tpl-message">{% with m = demo_samples.message %}{% include 'partials/message.html' %}{% endwith %}</template>
+{% endif %}
+<script type="application/json" id="demo-index">{{ demo_samples.index|tojson }}</script>
+{% endif %}

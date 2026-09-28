@@ -1,0 +1,30 @@
+{% import '_macros.html' as ui %}
+{% set tags = trending_tags(6) %}
+{% if tags %}
+<section class="side-card" aria-labelledby="trending-title">
+    <h2 class="side-card__title" id="trending-title">{{ ui.icon('trending-up') }} Trending</h2>
+    <ol class="trend-list">
+        {% for tag, n in tags %}
+        <li>
+            <a href="{{ url_for('tag', name=tag) }}" class="trend">
+                <span class="trend__rank">{{ loop.index }}</span>
+                <span><span class="trend__tag">#{{ tag }}</span><span class="trend__count">{{ n }} post{{ 's' if n != 1 }}</span></span>
+            </a>
+        </li>
+        {% endfor %}
+    </ol>
+</section>
+{% endif %}
+
+{% set suggestions = who_to_follow(3) %}
+{% if suggestions %}
+<section class="side-card" aria-labelledby="suggest-title">
+    <h2 class="side-card__title" id="suggest-title">{{ ui.icon('user-plus') }} Who to follow</h2>
+    <div class="suggest-list">
+        {% for person in suggestions %}{{ ui.user_row(person) }}{% endfor %}
+    </div>
+    <a href="{{ url_for('people') }}" class="btn btn--ghost btn--sm btn--block" style="margin-top:12px">Discover more people</a>
+</section>
+{% endif %}
+
+{% include 'partials/footer_links.html' %}

@@ -120,6 +120,7 @@
         <p class="warning-text">This will permanently delete the post.</p>
         <div class="modal-actions">
             <form id="delete-form" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="button" class="admin-btn btn-secondary" id="cancel-delete">Cancel</button>
                 <button type="submit" class="admin-btn btn-danger">Delete</button>
             </form>

@@ -43,6 +43,7 @@
 
         <form method="POST" action="{{ url_for('admin.update_report_status', report_id=report.id) }}"
             class="status-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label for="status">Update Status</label>
                 <select id="status" name="status" class="status-select">

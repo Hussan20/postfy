@@ -1,98 +1,45 @@
 {% extends "base.html" %}
+{% set active_nav = 'newposts' %}
 
-{% block title %}Edit Post - Postfy{% endblock %}
+{% block title %}Edit post · Postfy{% endblock %}
 
 {% block content %}
-<section class="newpost-section">
-    <h2>Edit Your Post</h2>
-    <p>Make changes to your post</p>
+<div class="page-head">
+    <a href="{{ url_for('post_detail', post_id=post.id) }}" class="icon-btn" data-back aria-label="Back">{{ ui.icon('arrow-left') }}</a>
+    <div>
+        <h1 class="page-head__title">Edit post</h1>
+        <p class="page-head__sub">Changes are marked as “Edited” on your post</p>
+    </div>
+</div>
 
-    <form method="POST" action="{{ url_for('edit_post', post_id=post.id) }}" class="newpost-form">
-        <div class="form-group">
-            <label for="post_title">Post Title</label>
-            <input type="text" id="post_title" name="post_title" value="{{ post.title }}" required class="input-field">
+<form method="POST" action="{{ url_for('edit_post', post_id=post.id) }}" enctype="multipart/form-data" class="card card--pad" data-composer>
+    {{ ui.csrf() }}
+    <div class="field">
+        <label class="field__label" for="post_title">Title</label>
+        <input type="text" id="post_title" name="post_title" class="input" value="{{ form.title }}" maxlength="{{ MAX_TITLE_LENGTH }}" required dir="auto">
+    </div>
+    <div class="field">
+        <label class="field__label" for="post_content">Content <span class="faint" data-char-label></span></label>
+        <textarea id="post_content" name="post_content" rows="8" class="textarea" maxlength="{{ MAX_POST_LENGTH }}" required dir="auto" data-autogrow data-mentions data-counter>{{ form.content }}</textarea>
+    </div>
+
+    <div class="field">
+        <span class="field__label">Photo</span>
+        <div class="composer__preview" data-image-preview {% if not post.image %}hidden{% endif %} style="margin:0">
+            <img src="{{ post.image_url or '' }}" alt="Post image preview">
+            <button type="button" class="icon-btn icon-btn--sm" data-remove-image aria-label="Remove image">{{ ui.icon('x') }}</button>
         </div>
+        <input type="hidden" name="remove_image" value="" data-remove-flag>
+        <label class="dropzone" data-dropzone>
+            <span class="dropzone__preview" style="border-radius:12px">{{ ui.icon('image') }}</span>
+            <span class="dropzone__text"><strong>{{ 'Replace photo' if post.image else 'Add a photo' }}</strong><span>Click or drop an image · PNG, JPG, GIF, WEBP</span></span>
+            <input type="file" name="post_image" accept="image/png,image/jpeg,image/gif,image/webp" hidden data-image-input>
+        </label>
+    </div>
 
-        <div class="form-group">
-            <label for="post_content">Post Content</label>
-            <textarea id="post_content" name="post_content" rows="8" required
-                class="textarea-field">{{ post.content }}</textarea>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="cta-btn neon-btn">Save Changes</button>
-            <a href="{{ url_for('newposts') }}" class="cta-link back-link">Cancel</a>
-        </div>
-    </form>
-</section>
-
-<style>
-    .newpost-section {
-        background: var(--light-background);
-        padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px var(--shadow);
-        max-width: 800px;
-        margin: 40px auto;
-        text-align: center;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-        text-align: left;
-    }
-
-    .input-field,
-    .textarea-field {
-        width: 100%;
-        padding: 12px;
-        font-size: 1rem;
-        background-color: var(--dark-background);
-        color: var(--text-light);
-        border: 1px solid var(--neon-blue);
-        border-radius: 10px;
-        transition: border 0.3s ease, transform 0.3s ease;
-    }
-
-    .input-field:focus,
-    .textarea-field:focus {
-        border-color: var(--neon-pink);
-        transform: scale(1.05);
-    }
-
-    .neon-btn {
-        background: linear-gradient(to right, var(--neon-purple), var(--neon-blue));
-        color: white;
-        padding: 12px 24px;
-        border-radius: 30px;
-        border: none;
-        cursor: pointer;
-        font-size: 1.2rem;
-        transition: background 0.3s ease, transform 0.3s ease;
-    }
-
-    .neon-btn:hover {
-        background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
-        transform: translateY(-3px);
-    }
-
-    .back-link {
-        display: inline-block;
-        margin-left: 15px;
-        font-size: 1rem;
-        color: var(--neon-blue);
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .back-link:hover {
-        color: var(--neon-pink);
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-</style>
+    <div class="settings-card__foot">
+        <a href="{{ url_for('post_detail', post_id=post.id) }}" class="btn btn--ghost">Cancel</a>
+        <button type="submit" class="btn btn--primary" data-submit>{{ ui.icon('check', 'icon--sm') }} Save changes</button>
+    </div>
+</form>
 {% endblock %}

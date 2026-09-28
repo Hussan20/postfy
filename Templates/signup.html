@@ -1,129 +1,100 @@
 {% extends "base.html" %}
+{% set layout = 'bare' %}
 
-{% block title %}Sign Up - Postfy{% endblock %}
+{% block title %}Create your account · Postfy{% endblock %}
+
+{% macro error(name) -%}
+{% if errors.get(name) %}<span class="field__error" id="{{ name }}-error">{{ ui.icon('alert-circle', 'icon--sm') }} {{ errors[name] }}</span>{% endif %}
+{%- endmacro %}
 
 {% block content %}
-<section class="signup-form">
-    <h2>Create an account</h2>
-    <p>Enter your information to get started</p>
-    <form method="POST" action="{{ url_for('signup') }}" enctype="multipart/form-data">
-        <div class="name-fields">
-            <div class="form-group">
-                <label for="first_name">First Name</label>
-                <input type="text" id="first_name" name="first_name" placeholder="Ahmed" required>
-            </div>
-            <div class="form-group">
-                <label for="last_name">Last Name</label>
-                <input type="text" id="last_name" name="last_name" placeholder="Ali" required>
-            </div>
+<div class="auth">
+    <aside class="auth__panel">
+        <img src="{{ asset('images/logo-192.png') }}" alt="Postfy logo" width="72" height="72">
+        <h2>Join the conversation in under a minute.</h2>
+        <p>Share your stories, follow people who inspire you and build real connections — all in one place.</p>
+        <ul class="auth__perks">
+            <li>{{ ui.icon('feather') }} Posts with photos, #hashtags &amp; @mentions</li>
+            <li>{{ ui.icon('users') }} Follow friends and discover new people</li>
+            <li>{{ ui.icon('droplet') }} Light &amp; dark themes with custom accents</li>
+            <li>{{ ui.icon('shield') }} Your data, exportable any time</li>
+        </ul>
+    </aside>
+
+    <div class="auth__form-wrap">
+        <div class="auth__card">
+            <h1 class="auth__title">Create your account</h1>
+            <p class="auth__sub">It's free and always will be.</p>
+
+            {% if config.STATIC_DEMO %}
+            <div class="demo-hint">{{ ui.icon('info') }}<span>This is a demo — submit the form to jump straight into the app as <strong>Nour</strong>.</span></div>
+            {% endif %}
+
+            <form method="POST" action="{{ url_for('signup') }}" enctype="multipart/form-data" data-auth-form>
+                {{ ui.csrf() }}
+                <div class="field-row">
+                    <div class="field">
+                        <label class="field__label" for="first_name">First name</label>
+                        <input class="input{% if errors.first_name %} is-invalid{% endif %}" type="text" id="first_name" name="first_name" value="{{ form.first_name }}" placeholder="Ahmed" required maxlength="100" autocomplete="given-name" dir="auto" data-username-source>
+                        {{ error('first_name') }}
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="last_name">Last name</label>
+                        <input class="input{% if errors.last_name %} is-invalid{% endif %}" type="text" id="last_name" name="last_name" value="{{ form.last_name }}" placeholder="Ali" required maxlength="100" autocomplete="family-name" dir="auto" data-username-source>
+                        {{ error('last_name') }}
+                    </div>
+                </div>
+                <div class="field" style="margin-top:16px">
+                    <label class="field__label" for="username">Username <span class="field__status" data-username-status></span></label>
+                    <div class="input-wrap">
+                        <span class="input-prefix">@</span>
+                        <input class="input{% if errors.username %} is-invalid{% endif %}" type="text" id="username" name="username" value="{{ form.username }}" placeholder="ahmed_ali" required pattern="[A-Za-z0-9_]{3,30}" maxlength="30" autocomplete="off" data-username-check>
+                    </div>
+                    {{ error('username') }}
+                </div>
+                <div class="field">
+                    <label class="field__label" for="email">Email</label>
+                    <div class="input-wrap">
+                        {{ ui.icon('mail') }}
+                        <input class="input{% if errors.email %} is-invalid{% endif %}" type="email" id="email" name="email" value="{{ form.email }}" placeholder="ahmed@example.com" required autocomplete="email">
+                    </div>
+                    {{ error('email') }}
+                </div>
+                <div class="field">
+                    <label class="field__label" for="password">Password</label>
+                    <div class="input-wrap">
+                        {{ ui.icon('lock') }}
+                        <input class="input{% if errors.password %} is-invalid{% endif %}" type="password" id="password" name="password" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password" data-strength>
+                        <button type="button" class="icon-btn icon-btn--sm input-affix" data-toggle-password aria-label="Show password">{{ ui.icon('eye') }}</button>
+                    </div>
+                    <div class="strength" data-strength-meter aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                    <span class="field__hint" data-strength-label>Use 8+ characters with a mix of letters, numbers &amp; symbols.</span>
+                    {{ error('password') }}
+                </div>
+                <div class="field">
+                    <label class="field__label" for="gender">Gender</label>
+                    <select class="select{% if errors.gender %} is-invalid{% endif %}" id="gender" name="gender" required>
+                        <option value="">Select…</option>
+                        <option value="male" {% if form.gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if form.gender == 'female' %}selected{% endif %}>Female</option>
+                        <option value="other" {% if form.gender == 'other' %}selected{% endif %}>Prefer not to say</option>
+                    </select>
+                    {{ error('gender') }}
+                </div>
+                <div class="field">
+                    <span class="field__label">Profile photo <span class="faint">Optional</span></span>
+                    <label class="dropzone" data-dropzone>
+                        <span class="dropzone__preview" data-dropzone-preview>{{ ui.icon('camera') }}</span>
+                        <span class="dropzone__text"><strong data-dropzone-name>Upload a photo</strong><span>Click or drag &amp; drop · PNG, JPG, GIF, WEBP</span></span>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                    </label>
+                    {{ error('profile_picture') }}
+                </div>
+                <button type="submit" class="btn btn--primary btn--lg btn--block" style="margin-top:24px" data-submit>Create account {{ ui.icon('arrow-right', 'icon--sm') }}</button>
+            </form>
+
+            <p class="auth__foot">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
         </div>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" placeholder="Ahmed@example.com" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter your password" required>
-        </div>
-        <div class="form-group">
-            <label for="gender">Gender</label>
-            <select id="gender" name="gender" required>
-                <option value="">Select your gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-            </select>
-        </div>
-
-    
-
-
-
-
-
-<!----------------------------------------------------------------------------------------------------------->
-        <div class="form-group">
-            <label for="profile_picture">Profile Picture (Optional)</label>
-            <div class="file-upload-container">
-                <input type="file" id="profile_picture" name="profile_picture" accept=".jpg, .jpeg, .png, .gif"
-                    class="file-input">
-                <label for="profile_picture" class="file-label">
-                    <span class="file-icon">📷</span>
-                    <span class="file-text">Choose a file</span>
-                </label>
-                <span id="file-name" class="file-name">No file chosen</span>
-            </div>
-        </div>
-        <button type="submit" class="cta-btn">Create Account</button>
-    </form>
-    <p>Already have an account? <a href="{{ url_for('login') }}" class="cta-link">Login</a></p>
-</section>
-
-
-
-
-
-
-
-
-
-<style>
-    /* File upload styling */
-    .file-upload-container {
-        display: flex;
-        align-items: center;
-        margin-top: 5px;
-    }
-
-    .file-input {
-        position: absolute;
-        width: 0.1px;
-        height: 0.1px;
-        opacity: 0;
-        overflow: hidden;
-        z-index: -1;
-    }
-
-    .file-label {
-        display: inline-flex;
-        align-items: center;
-        padding: 10px 15px;
-        background: linear-gradient(to right, var(--neon-purple), var(--neon-blue));
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .file-label:hover {
-        background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
-        transform: translateY(-2px);
-    }
-
-    .file-icon {
-        margin-right: 8px;
-        font-size: 1.2rem;
-    }
-
-    .file-name {
-        margin-left: 10px;
-        color: var(--text-light);
-        font-size: 0.9rem;
-    }
-</style>
-
-<script>
-    // Update file name display when a file is selected
-    document.addEventListener('DOMContentLoaded', function () {
-        const fileInput = document.getElementById('profile_picture');
-        const fileName = document.getElementById('file-name');
-
-        fileInput.addEventListener('change', function () {
-            if (fileInput.files.length > 0) {
-                fileName.textContent = fileInput.files[0].name;
-            } else {
-                fileName.textContent = 'No file chosen';
-            }
-        });
-    });
-</script>
+    </div>
+</div>
 {% endblock %}

@@ -1,23 +1,78 @@
 {% extends "base.html" %}
+{% set layout = 'bare' %}
 
-{% block title %}Postfy - Connect, Share, and Engage{% endblock %}
+{% block title %}Postfy — Connect, Share, and Engage{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-    <div class="hero-content">
-        <h1>Connect, Share, and Engage</h1>
-        <p>Join millions of people who use Postfy to share their stories,
-             connect with friends, and build meaningful
-            relationships.</p>
-        <div class="cta-buttons">
-            {% if 'user_id' in session %}
-            <a href="{{ url_for('profile') }}" class="cta-btn">Go to Your Profile</a>
-            {% else %}
-            <a href="{{ url_for('signup') }}" class="cta-btn">Join Now</a>
-            <a href="{{ url_for('login') }}" class="cta-link">Already have an account?</a>
-            {% endif %}
+<div class="landing">
+    <section class="hero">
+        <div class="hero__bg" aria-hidden="true">
+            <div class="blob blob--1"></div>
+            <div class="blob blob--2"></div>
+            <div class="blob blob--3"></div>
+            <div class="hero__grid"></div>
         </div>
-    </div>
-</section>
+        <div class="hero__inner">
+            <div>
+                <span class="hero__eyebrow"><b>New</b> Messages, hashtags &amp; a brand-new look</span>
+                <h1 class="hero__title">Connect, share <br>and <span class="gradient-text">engage.</span></h1>
+                <p class="hero__lead">Postfy is where friends share stories, spark conversations and discover
+                    what's trending — with a feed that feels fast, personal and yours.</p>
+                <div class="hero__cta">
+                    <a href="{{ url_for('signup') }}" class="btn btn--primary btn--lg">{{ ui.icon('sparkles') }} Join Postfy — it's free</a>
+                    <a href="{{ url_for('login') }}" class="btn btn--outline btn--lg">{{ ui.icon('log-in') }} Sign in</a>
+                </div>
+                <div class="hero__stats">
+                    <div><strong data-count-up="{{ stats.users }}">{{ stats.users|compact }}</strong><span>Members</span></div>
+                    <div><strong data-count-up="{{ stats.posts }}">{{ stats.posts|compact }}</strong><span>Posts shared</span></div>
+                    <div><strong data-count-up="{{ stats.comments }}">{{ stats.comments|compact }}</strong><span>Conversations</span></div>
+                    <div><strong data-count-up="{{ stats.reactions }}">{{ stats.reactions|compact }}</strong><span>Reactions</span></div>
+                </div>
+            </div>
+
+            <div class="hero__preview" aria-label="Recent posts preview">
+                {% if preview %}
+                <div class="hero__float hero__float--a"><span class="notif__icon notif__icon--like">{{ ui.icon('thumbs-up') }}</span> {% if preview[0].like_count %}+{{ preview[0].like_count }} like{{ 's' if preview[0].like_count != 1 }}{% else %}Someone liked your post{% endif %}</div>
+                {% for post in preview %}{{ ui.post_card(post) }}{% endfor %}
+                <div class="hero__float hero__float--b"><span class="notif__icon notif__icon--follow">{{ ui.icon('user-plus') }}</span> New follower!</div>
+                {% else %}
+                <div class="card card--pad">
+                    {{ ui.empty_state('feather', 'Be the first to post', 'The community is just getting started — create an account and write the very first post.') }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <section class="features" aria-labelledby="features-title">
+        <div class="features__head">
+            <h2 id="features-title">Everything you need to <span class="gradient-text">stay connected</span></h2>
+            <p>Thoughtfully designed features that make sharing effortless and conversations meaningful.</p>
+        </div>
+        <div class="features__grid">
+            {% for icon_name, title, text in [
+                ('feather', 'Beautiful posts', 'Write with titles, photos, #hashtags and @mentions. Drafts save automatically as you type.'),
+                ('zap', 'Instant reactions', 'Like, comment and save without page reloads — everything updates in real time.'),
+                ('mail', 'Direct messages', 'Private one-to-one conversations with read receipts and live updates.'),
+                ('bell', 'Smart notifications', 'Know when someone likes, comments, mentions or follows you.'),
+                ('trending-up', 'Trending & discovery', 'Explore trending hashtags, popular posts and people you might know.'),
+                ('droplet', 'Make it yours', 'Light, dark or system theme, five accent colors, text size and reduced motion.'),
+            ] %}
+            <article class="card feature">
+                <div class="feature__icon">{{ ui.icon(icon_name) }}</div>
+                <h3>{{ title }}</h3>
+                <p>{{ text }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="cta-band">
+        <div class="cta-band__inner">
+            <h2>Your community is waiting.</h2>
+            <p>Create your free account in less than a minute.</p>
+            <a href="{{ url_for('signup') }}" class="btn btn--lg">Get started {{ ui.icon('arrow-right') }}</a>
+        </div>
+    </section>
+</div>
 {% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% set active_nav = 'user_profile' %}
+
+{% block title %}{{ kind|capitalize }} · {{ user.full_name }} · Postfy{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <a href="{{ url_for('user_profile', username=user.handle) }}" class="icon-btn" aria-label="Back to profile">{{ ui.icon('arrow-left') }}</a>
+    <div>
+        <h1 class="page-head__title" dir="auto">{{ user.full_name }}</h1>
+        <p class="page-head__sub">@{{ user.handle }}</p>
+    </div>
+</div>
+
+<nav class="tabs" aria-label="Connections">
+    <a href="{{ url_for('follow_list', username=user.handle, kind='followers') }}" class="tab{% if kind == 'followers' %} is-active{% endif %}">Followers <span class="tab__count">{{ stats.followers }}</span></a>
+    <a href="{{ url_for('follow_list', username=user.handle, kind='following') }}" class="tab{% if kind == 'following' %} is-active{% endif %}">Following <span class="tab__count">{{ stats.following }}</span></a>
+</nav>
+
+{% if users %}
+<div class="card list-card">
+    {% for person in users %}{{ ui.user_row(person, show_bio=true) }}{% endfor %}
+</div>
+{% else %}
+<div class="card">
+    {% if kind == 'followers' %}
+    {{ ui.empty_state('users', 'No followers yet', 'When people follow @' ~ user.handle ~ ', they will show up here.') }}
+    {% else %}
+    {{ ui.empty_state('user-plus', 'Not following anyone yet', 'Accounts @' ~ user.handle ~ ' follows will show up here.', url_for('people') if current_user else None, 'Explore people') }}
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,6 @@
+{% import '_macros.html' as ui %}
+{%- set mine = m.sender_id == g.user.id -%}
+<div class="msg {{ 'msg--mine' if mine else 'msg--theirs' }}" data-message-id="{{ m.id }}">
+    <div class="msg__bubble" dir="auto">{{ m.body|rich }}</div>
+    <span class="msg__time">{{ ui.time_tag(m.created_at) }}</span>
+</div>

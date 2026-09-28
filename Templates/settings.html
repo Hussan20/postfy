@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% set layout = 'wide' %}
+{% set active_nav = 'settings' %}
+{% set me = current_user %}
+
+{% block title %}Settings · Postfy{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Settings</h1>
+        <p class="page-head__sub">Manage your profile, account and how Postfy looks</p>
+    </div>
+    <div class="page-head__actions">
+        <a href="{{ url_for('user_profile', username=me.handle) }}" class="btn btn--outline btn--sm">{{ ui.icon('user', 'icon--sm') }} View profile</a>
+    </div>
+</div>
+
+<div class="settings">
+    <nav class="settings__nav" aria-label="Settings sections" data-scrollspy>
+        <a href="#profile" class="is-active">{{ ui.icon('user') }} Profile</a>
+        <a href="#account">{{ ui.icon('mail') }} Account</a>
+        <a href="#appearance">{{ ui.icon('droplet') }} Appearance</a>
+        <a href="#security">{{ ui.icon('lock') }} Password</a>
+        <a href="#data">{{ ui.icon('download') }} Your data</a>
+        <a href="#danger" class="is-danger">{{ ui.icon('alert-triangle') }} Delete account</a>
+    </nav>
+
+    <div class="settings__sections">
+        {# Profile ---------------------------------------------------- #}
+        <form method="POST" action="{{ url_for('settings_profile') }}" enctype="multipart/form-data" class="card settings-card" id="profile">
+            {{ ui.csrf() }}
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('user') }}</span>
+                <div>
+                    <h2>Public profile</h2>
+                    <p>This is how people see you on Postfy.</p>
+                </div>
+            </div>
+
+            <div class="media-editor">
+                <div class="media-editor__cover" data-cover-preview>
+                    {% if me.cover_url %}<img src="{{ me.cover_url }}" alt="">{% endif %}
+                    <label class="media-btn" title="Change cover" aria-label="Change cover image">
+                        {{ ui.icon('camera') }}
+                        <input type="file" name="cover_picture" accept="image/png,image/jpeg,image/gif,image/webp" hidden data-preview-target="[data-cover-preview]">
+                    </label>
+                </div>
+                <div class="media-editor__avatar" data-avatar-preview>
+                    {{ ui.avatar(me, 'xl') }}
+                    <label class="media-btn" title="Change photo" aria-label="Change profile photo">
+                        {{ ui.icon('camera') }}
+                        <input type="file" name="profile_picture" accept="image/png,image/jpeg,image/gif,image/webp" hidden data-preview-target="[data-avatar-preview] .avatar">
+                    </label>
+                </div>
+                <div class="media-editor__remove">
+                    {% if me.avatar_url %}<label class="check text-sm"><input type="checkbox" name="remove_avatar" value="1"> Remove photo</label>{% endif %}
+                    {% if me.cover_url %}<label class="check text-sm"><input type="checkbox" name="remove_cover" value="1"> Remove cover</label>{% endif %}
+                </div>
+            </div>
+
+            <div class="field-row">
+                <div class="field">
+                    <label class="field__label" for="first_name">First name</label>
+                    <input class="input" id="first_name" name="first_name" value="{{ me.first_name }}" required maxlength="100" dir="auto">
+                </div>
+                <div class="field">
+                    <label class="field__label" for="last_name">Last name</label>
+                    <input class="input" id="last_name" name="last_name" value="{{ me.last_name }}" required maxlength="100" dir="auto">
+                </div>
+            </div>
+            <div class="field" style="margin-top:16px">
+                <label class="field__label" for="username">Username <span class="field__status" data-username-status></span></label>
+                <div class="input-wrap">
+                    <span class="input-prefix">@</span>
+                    <input class="input" id="username" name="username" value="{{ me.username }}" required pattern="[A-Za-z0-9_]{3,30}" maxlength="30" autocomplete="off" data-username-check>
+                </div>
+                <span class="field__hint">postfy.app/u/<span data-username-preview>{{ me.username }}</span></span>
+            </div>
+            <div class="field">
+                <label class="field__label" for="bio">Bio <span class="faint" data-count-for="bio">{{ (me.bio or '')|length }}/{{ MAX_BIO_LENGTH }}</span></label>
+                <textarea class="textarea" id="bio" name="bio" rows="3" maxlength="{{ MAX_BIO_LENGTH }}" placeholder="Tell people a little about yourself" dir="auto" data-autogrow data-count="{{ MAX_BIO_LENGTH }}">{{ me.bio or '' }}</textarea>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label class="field__label" for="location">Location</label>
+                    <div class="input-wrap">{{ ui.icon('map-pin') }}<input class="input" id="location" name="location" value="{{ me.location or '' }}" maxlength="100" placeholder="City, Country" dir="auto"></div>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="website">Website</label>
+                    <div class="input-wrap">{{ ui.icon('link') }}<input class="input" id="website" name="website" value="{{ me.website or '' }}" maxlength="200" placeholder="yoursite.com"></div>
+                </div>
+            </div>
+            <div class="settings-card__foot">
+                <button type="submit" class="btn btn--primary" data-submit>{{ ui.icon('check', 'icon--sm') }} Save profile</button>
+            </div>
+        </form>
+
+        {# Account ---------------------------------------------------- #}
+        <form method="POST" action="{{ url_for('settings_account') }}" class="card settings-card" id="account">
+            {{ ui.csrf() }}
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('mail') }}</span>
+                <div>
+                    <h2>Account</h2>
+                    <p>Your sign-in email and personal details. These are never shown publicly.</p>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label class="field__label" for="email">Email</label>
+                    <input class="input" type="email" id="email" name="email" value="{{ me.email }}" required data-email-field data-original="{{ me.email }}">
+                </div>
+                <div class="field">
+                    <label class="field__label" for="gender">Gender</label>
+                    <select class="select" id="gender" name="gender">
+                        <option value="male" {% if me.gender == 'male' %}selected{% endif %}>Male</option>
+                        <option value="female" {% if me.gender == 'female' %}selected{% endif %}>Female</option>
+                        <option value="other" {% if me.gender not in ('male', 'female') %}selected{% endif %}>Prefer not to say</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field" style="margin-top:16px" data-email-password hidden>
+                <label class="field__label" for="account_password">Current password</label>
+                <input class="input" type="password" id="account_password" name="current_password" autocomplete="current-password" placeholder="Required to change your email">
+            </div>
+            <div class="settings-card__foot">
+                <button type="submit" class="btn btn--primary">{{ ui.icon('check', 'icon--sm') }} Save account</button>
+            </div>
+        </form>
+
+        {# Appearance ------------------------------------------------- #}
+        <section class="card settings-card" id="appearance" data-appearance>
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('droplet') }}</span>
+                <div>
+                    <h2>Appearance</h2>
+                    <p>Make Postfy yours. Saved on this device and applied instantly.</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <span class="field__label">Theme</span>
+                <div class="theme-options" role="radiogroup" aria-label="Theme">
+                    {% for value, label, icon_name in [('light', 'Light', 'sun'), ('dark', 'Dark', 'moon'), ('system', 'System', 'monitor')] %}
+                    <label class="theme-option">
+                        <input type="radio" name="theme" value="{{ value }}" data-pref="theme">
+                        <span class="theme-option__card">
+                            <span class="theme-preview theme-preview--{{ value }}"><i></i><i></i><i style="width:70%"></i></span>
+                            <span class="theme-option__label">{{ ui.icon(icon_name) }} {{ label }}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="field" style="margin-top:22px">
+                <span class="field__label">Accent color</span>
+                <div class="swatches" role="radiogroup" aria-label="Accent color">
+                    {% for value, label, colors in [('neon', 'Neon', '#00b8f4, #9a00f7, #ff57ff'), ('sunset', 'Sunset', '#ff6a3d, #ff3d7f, #ffb03d'), ('mint', 'Mint', '#00c896, #00a3e0, #7cf5c8'), ('grape', 'Grape', '#8b5cf6, #d946ef, #f472b6'), ('ocean', 'Ocean', '#3b82f6, #06b6d4, #22d3ee')] %}
+                    <label class="swatch" title="{{ label }}">
+                        <input type="radio" name="accent" value="{{ value }}" data-pref="accent" aria-label="{{ label }}">
+                        <span style="background: linear-gradient(135deg, {{ colors }})"></span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="margin-top:22px">
+                <div class="setting-row">
+                    <div class="setting-row__text"><strong>Text size</strong><span>Adjust the size of text across Postfy.</span></div>
+                    <div class="segmented" role="radiogroup" aria-label="Text size">
+                        {% for value, label in [('small', 'Small'), ('default', 'Default'), ('large', 'Large')] %}
+                        <label><input type="radio" name="fontSize" value="{{ value }}" data-pref="fontSize"><span>{{ label }}</span></label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <label class="setting-row switch">
+                    <span class="setting-row__text"><strong>Reduce motion</strong><span>Turn off animations and transitions.</span></span>
+                    <input type="checkbox" data-pref="motion" value="reduced">
+                </label>
+            </div>
+        </section>
+
+        {# Password --------------------------------------------------- #}
+        <form method="POST" action="{{ url_for('settings_password') }}" class="card settings-card" id="security">
+            {{ ui.csrf() }}
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('lock') }}</span>
+                <div>
+                    <h2>Change password</h2>
+                    <p>Use at least 6 characters. A longer passphrase is even better.</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="field__label" for="current_password">Current password</label>
+                <div class="input-wrap">
+                    <input class="input" type="password" id="current_password" name="current_password" required autocomplete="current-password">
+                    <button type="button" class="icon-btn icon-btn--sm input-affix" data-toggle-password aria-label="Show password">{{ ui.icon('eye') }}</button>
+                </div>
+            </div>
+            <div class="field-row" style="margin-top:16px">
+                <div class="field">
+                    <label class="field__label" for="new_password">New password</label>
+                    <div class="input-wrap">
+                        <input class="input" type="password" id="new_password" name="new_password" required minlength="6" autocomplete="new-password" data-strength>
+                        <button type="button" class="icon-btn icon-btn--sm input-affix" data-toggle-password aria-label="Show password">{{ ui.icon('eye') }}</button>
+                    </div>
+                    <div class="strength" data-strength-meter aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                    <span class="field__hint" data-strength-label>&nbsp;</span>
+                </div>
+                <div class="field">
+                    <label class="field__label" for="confirm_password">Confirm new password</label>
+                    <input class="input" type="password" id="confirm_password" name="confirm_password" required minlength="6" autocomplete="new-password" data-match="#new_password">
+                </div>
+            </div>
+            <div class="settings-card__foot">
+                <button type="submit" class="btn btn--primary">{{ ui.icon('lock', 'icon--sm') }} Update password</button>
+            </div>
+        </form>
+
+        {# Data ------------------------------------------------------- #}
+        <section class="card settings-card" id="data">
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('download') }}</span>
+                <div>
+                    <h2>Your data</h2>
+                    <p>You have {{ stats.posts }} post{{ 's' if stats.posts != 1 }}, {{ stats.followers }} follower{{ 's' if stats.followers != 1 }} and follow {{ stats.following }} {{ 'person' if stats.following == 1 else 'people' }}.</p>
+                </div>
+            </div>
+            <div class="setting-row">
+                <div class="setting-row__text"><strong>Download your data</strong><span>Get a copy of your profile, posts and comments as a JSON file.</span></div>
+                <a href="{{ url_for('export_data') }}" class="btn btn--outline btn--sm" download>{{ ui.icon('download', 'icon--sm') }} Export</a>
+            </div>
+        </section>
+
+        {# Danger zone ------------------------------------------------ #}
+        <form method="POST" action="{{ url_for('delete_account') }}" class="card settings-card danger-zone" id="danger"
+            data-confirm="This permanently deletes your profile, posts, comments, likes, follows and messages. This can't be undone."
+            data-confirm-title="Delete your account?" data-confirm-label="Delete my account">
+            {{ ui.csrf() }}
+            <div class="settings-card__head">
+                <span class="settings-card__icon">{{ ui.icon('alert-triangle') }}</span>
+                <div>
+                    <h2>Delete account</h2>
+                    <p>Permanently remove your account and everything you've shared.</p>
+                </div>
+            </div>
+            <div class="field">
+                <label class="field__label" for="delete_password">Confirm with your password</label>
+                <input class="input" type="password" id="delete_password" name="password" required autocomplete="current-password">
+            </div>
+            <div class="settings-card__foot">
+                <button type="submit" class="btn btn--danger">{{ ui.icon('trash', 'icon--sm') }} Delete my account</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

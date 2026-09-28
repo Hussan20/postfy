@@ -1,250 +1,237 @@
+{% import '_macros.html' as ui %}
+{%- set layout = layout|default('app') -%}
+{%- set active_nav = active_nav|default(request.endpoint) -%}
+{%- set counts = unread_counts() -%}
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom_theme.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Postfy{% endblock %}</title>
-    <style>
-        /* Modal styles for report dialog */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            overflow: auto;
-        }
-
-        .modal-content {
-            background-color: var(--light-background);
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 50%;
-            max-width: 600px;
-            box-shadow: 0 5px 20px var(--shadow);
-            animation: modalAppear 0.3s ease;
-        }
-
-        @keyframes modalAppear {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .close-modal {
-            color: var(--text-light);
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .close-modal:hover {
-            color: var(--neon-pink);
-        }
-
-        .modal h3 {
-            margin-top: 10px;
-            margin-bottom: 15px;
-            color: var(--neon-blue);
-        }
-
-        .report-form {
-            margin-top: 20px;
-        }
-
-        /* Footer styles */
-        .footer-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .footer-actions {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        /* Report button styling */
-        .report-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 8px 15px;
-            background-color: var(--neon-orange);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            font-family: inherit;
-        }
-
-        .footer-report {
-            background: linear-gradient(to right, var(--neon-orange), var(--neon-pink));
-        }
-
-        .report-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            background: linear-gradient(to right, var(--neon-pink), var(--neon-orange));
-        }
-
-        /* Responsive modal */
-        @media (max-width: 768px) {
-            .modal-content {
-                width: 90%;
-                margin: 20% auto;
-                padding: 20px;
-            }
-
-            .footer-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-    </style>
+    <meta name="description" content="{% block description %}Postfy — share your stories, connect with friends and join the conversation.{% endblock %}">
+    <meta name="theme-color" content="#0b0d12">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta property="og:site_name" content="Postfy">
+    <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:image" content="{{ asset('images/logo-512.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo-192.png') }}">
+    <link rel="manifest" href="{{ url_for('manifest') }}">
+    <script>
+        /* Apply saved appearance before first paint to avoid a flash. */
+        (function () {
+            var d = document.documentElement, s = {};
+            try { s = JSON.parse(localStorage.getItem('postfy:appearance') || '{}'); } catch (e) { }
+            var theme = s.theme || localStorage.getItem('theme') || 'system';
+            if (theme === 'system') theme = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            d.setAttribute('data-theme', theme);
+            if (s.accent) d.setAttribute('data-accent', s.accent);
+            if (s.fontSize) d.setAttribute('data-font-size', s.fontSize);
+            if (s.motion) d.setAttribute('data-motion', s.motion);
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="{{ asset('css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/custom_theme.css') }}">
+    {% block head %}{% endblock %}
 </head>
 
-<body>
-    <nav class="navbar">
+<body class="layout-{{ layout }}{% block body_class %}{% endblock %}" {% if config.STATIC_DEMO %}data-demo{% endif %}
+    {% if current_user %}data-user="{{ current_user.handle }}"{% endif %}>
+    <a href="#main" class="skip-link">Skip to content</a>
 
-        <div class="navbar-left">
-            <img src="{{ url_for('static', filename='images/logo1.png') }}" alt="Logo" class="logo">
-            <span class="brand-name">Postfy</span>
-        </div>
-        <div class="navbar-center">
-            <a href="{{ url_for('newposts') }}" class="nav-link">Last Posts</a>
-            <a href="#" class="nav-link">Friends</a>
-            <a href="#" class="nav-link">Messages</a>
-        </div>
-        <div class="navbar-right">
-            {% if 'user_id' in session %}
-            <!-- If the user is logged in, show 'Sign Out' -->
-            <a href="{{ url_for('logout') }}" class="auth-btn">Sign Out</a>
-            {% else %}
-            <!-- If the user is not logged in, show 'Sign In' and 'Sign Up' -->
-            <a href="{{ url_for('login') }}" class="auth-btn">Sign In</a>
-            <a href="{{ url_for('signup') }}" class="auth-btn sign-up-btn">Sign Up</a>
-            {% endif %}
-        </div>
-    </nav>
-
-    <div class="content">
-        {% block content %}{% endblock %}
+    {% if config.STATIC_DEMO %}
+    <div class="demo-banner" role="note">
+        {{ ui.icon('sparkles', 'icon--sm') }}
+        <span>You're exploring a live demo of Postfy — interactions work, but nothing is saved.</span>
+        <a href="https://github.com/hussan20/postfy#run-it-locally">Run the full app →</a>
     </div>
-    <footer style="text-align: center; padding: 20px; background: var(--light-background); color: var(--text-light);">
-        <div class="footer-content">
-            <p>Current Version: {{ APP_VERSION }}</p>
-            <div class="footer-actions">
-                <button id="report-btn" class="report-btn footer-report">🚨 Report Issue</button>
-                <div class="theme-toggle">
-                    <button id="theme-toggle-btn">🌙 Dark Mode</button>
+    {% endif %}
+
+    <header class="topbar">
+        <div class="topbar__inner">
+            <a href="{{ url_for('home') }}" class="brand" aria-label="Postfy home">
+                <img src="{{ asset('images/logo-128.png') }}" alt="" class="brand__logo" width="36" height="36">
+                <span class="brand__name">Postfy</span>
+            </a>
+
+            <form class="search" action="{{ url_for('search') }}" method="GET" role="search" data-search>
+                {{ ui.icon('search') }}
+                <input type="search" name="q" class="search__input" placeholder="Search people, posts, #tags"
+                    autocomplete="off" aria-label="Search Postfy" aria-autocomplete="list" aria-controls="search-panel"
+                    value="{{ q if request.endpoint == 'search' else '' }}" data-search-input>
+                <kbd aria-hidden="true">/</kbd>
+                <div class="search__panel" id="search-panel" role="listbox" data-search-panel hidden></div>
+            </form>
+
+            <nav class="topbar__actions" aria-label="Quick actions">
+                <button type="button" class="icon-btn topbar__search-btn" data-search-open aria-label="Search" style="display:none">{{ ui.icon('search') }}</button>
+                <button type="button" class="icon-btn theme-toggle" data-theme-toggle aria-label="Toggle dark mode" title="Toggle theme (T)">
+                    {{ ui.icon('sun', 'icon--sun') }}{{ ui.icon('moon', 'icon--moon') }}
+                </button>
+                {% if current_user %}
+                <a href="{{ url_for('notifications') }}" class="icon-btn topbar__notif" aria-label="Notifications" title="Notifications">
+                    {{ ui.icon('bell') }}<span class="badge" data-badge="notifications" {% if not counts.notifications %}hidden{% endif %}>{{ counts.notifications }}</span>
+                </a>
+                <a href="{{ url_for('messages') }}" class="icon-btn" aria-label="Messages" title="Messages">
+                    {{ ui.icon('mail') }}<span class="badge" data-badge="messages" {% if not counts.messages %}hidden{% endif %}>{{ counts.messages }}</span>
+                </a>
+                <a href="{{ url_for('create_post') }}" class="btn btn--primary btn--sm topbar__compose" data-compose>{{ ui.icon('plus', 'icon--sm') }} Create</a>
+                <div class="dropdown" data-dropdown>
+                    <button type="button" class="account-btn" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Account menu">
+                        {{ ui.avatar(current_user, 'sm') }}{{ ui.icon('chevron-down', 'icon--sm') }}
+                    </button>
+                    <div class="dropdown__menu" role="menu">
+                        <div class="dropdown__header">
+                            {{ ui.avatar(current_user, 'md') }}
+                            <div class="truncate"><strong dir="auto">{{ current_user.full_name }}</strong><span>@{{ current_user.handle }}</span></div>
+                        </div>
+                        <a class="dropdown__item" role="menuitem" href="{{ url_for('user_profile', username=current_user.handle) }}">{{ ui.icon('user') }} Your profile</a>
+                        <a class="dropdown__item" role="menuitem" href="{{ url_for('bookmarks') }}">{{ ui.icon('bookmark') }} Bookmarks</a>
+                        <a class="dropdown__item" role="menuitem" href="{{ url_for('settings') }}">{{ ui.icon('settings') }} Settings</a>
+                        <button type="button" class="dropdown__item" role="menuitem" data-open-dialog="shortcuts-dialog">{{ ui.icon('keyboard') }} Keyboard shortcuts <kbd>?</kbd></button>
+                        <button type="button" class="dropdown__item" role="menuitem" data-open-dialog="report-dialog">{{ ui.icon('flag') }} Report an issue</button>
+                        <div class="dropdown__sep"></div>
+                        <a class="dropdown__item is-danger" role="menuitem" href="{{ url_for('logout') }}">{{ ui.icon('log-out') }} Sign out</a>
+                    </div>
                 </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn--ghost btn--sm topbar__signin">Sign in</a>
+                <a href="{{ url_for('signup') }}" class="btn btn--primary btn--sm">Sign up</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <div class="shell">
+        {% if layout != 'bare' %}
+        <aside class="sidebar sidebar--left" aria-label="Navigation">
+            <nav class="side-nav">
+                {% if current_user %}
+                {% set nav = [
+                    ('newposts', 'home', 'Home', {}),
+                    ('people', 'compass', 'Explore', {}),
+                    ('notifications', 'bell', 'Notifications', {}),
+                    ('messages', 'mail', 'Messages', {}),
+                    ('bookmarks', 'bookmark', 'Bookmarks', {}),
+                    ('user_profile', 'user', 'Profile', {'username': current_user.handle}),
+                    ('settings', 'settings', 'Settings', {}),
+                ] %}
+                {% for endpoint, icon_name, label, args in nav %}
+                {% set is_active = active_nav == endpoint and (endpoint != 'user_profile' or (user is defined and user.id == current_user.id)) %}
+                <a href="{{ url_for(endpoint, **args) }}" class="side-nav__item{% if is_active %} is-active{% endif %}" {% if is_active %}aria-current="page"{% endif %}>
+                    {{ ui.icon(icon_name) }} {{ label }}
+                    {% if endpoint == 'notifications' and counts.notifications %}<span class="side-nav__badge" data-badge="notifications">{{ counts.notifications }}</span>{% endif %}
+                    {% if endpoint == 'messages' and counts.messages %}<span class="side-nav__badge" data-badge="messages">{{ counts.messages }}</span>{% endif %}
+                </a>
+                {% endfor %}
+                {% else %}
+                <a href="{{ url_for('home') }}" class="side-nav__item">{{ ui.icon('home') }} Home</a>
+                <a href="{{ url_for('search') }}" class="side-nav__item{% if active_nav == 'search' %} is-active{% endif %}">{{ ui.icon('search') }} Search</a>
+                <a href="{{ url_for('login') }}" class="side-nav__item">{{ ui.icon('log-in') }} Sign in</a>
+                {% endif %}
+            </nav>
+
+            {% if current_user %}
+            <a href="{{ url_for('create_post') }}" class="btn btn--primary btn--lg btn--block" data-compose>{{ ui.icon('feather') }} New post</a>
+            <div class="side-card mini-profile">
+                <a href="{{ url_for('user_profile', username=current_user.handle) }}" class="mini-profile__top">
+                    {{ ui.avatar(current_user, 'md') }}
+                    <span class="truncate"><span class="mini-profile__name" dir="auto">{{ current_user.full_name }}</span><br><span class="mini-profile__handle">@{{ current_user.handle }}</span></span>
+                </a>
             </div>
+            {% else %}
+            <div class="side-card">
+                <h3 class="side-card__title">{{ ui.icon('sparkles') }} New to Postfy?</h3>
+                <p class="muted text-sm" style="margin-bottom:14px">Join to post, comment, follow people and get your own profile.</p>
+                <a href="{{ url_for('signup') }}" class="btn btn--primary btn--block">Create account</a>
+            </div>
+            {% endif %}
+            {% if layout == 'wide' %}{% include 'partials/footer_links.html' %}{% endif %}
+        </aside>
+        {% endif %}
+
+        <main id="main" class="main">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if layout == 'app' %}
+        <aside class="sidebar sidebar--right" aria-label="Discover">
+            {% block sidebar_right %}{% include 'partials/sidebar_right.html' %}{% endblock %}
+        </aside>
+        {% endif %}
+    </div>
+
+    {% if layout == 'bare' %}
+    <footer class="site-footer">
+        <div class="site-footer__inner">
+            <span>© 2026 Postfy · {{ APP_VERSION }}</span>
+            <span class="spacer"></span>
+            <button type="button" data-open-dialog="report-dialog">Report an issue</button>
+            <button type="button" data-open-dialog="shortcuts-dialog">Keyboard shortcuts</button>
+            <a href="https://github.com/hussan20/postfy">GitHub</a>
         </div>
     </footer>
+    {% endif %}
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const themeToggleBtn = document.getElementById("theme-toggle-btn");
-            const body = document.body;
+    {% if current_user %}
+    <nav class="bottom-nav" aria-label="Mobile navigation">
+        <a href="{{ url_for('newposts') }}" class="bottom-nav__item{% if active_nav == 'newposts' %} is-active{% endif %}" aria-label="Home">{{ ui.icon('home') }}</a>
+        <a href="{{ url_for('people') }}" class="bottom-nav__item{% if active_nav in ('people', 'search') %} is-active{% endif %}" aria-label="Explore">{{ ui.icon('compass') }}</a>
+        <a href="{{ url_for('create_post') }}" class="bottom-nav__item" aria-label="New post" data-compose><span class="bottom-nav__create">{{ ui.icon('plus') }}</span></a>
+        <a href="{{ url_for('notifications') }}" class="bottom-nav__item{% if active_nav == 'notifications' %} is-active{% endif %}" aria-label="Notifications">{{ ui.icon('bell') }}<span class="badge" data-badge="notifications" {% if not counts.notifications %}hidden{% endif %}>{{ counts.notifications }}</span></a>
+        <a href="{{ url_for('user_profile', username=current_user.handle) }}" class="bottom-nav__item{% if active_nav == 'user_profile' and user is defined and user.id == current_user.id %} is-active{% endif %}" aria-label="Profile">{{ ui.avatar(current_user, 'xs') }}</a>
+    </nav>
+    {% endif %}
 
-            if (localStorage.getItem("theme") === "light") {
-                body.classList.add("light-mode");
-                themeToggleBtn.textContent = "🌞 Light Mode";
-            }
+    <button type="button" class="back-to-top" data-back-to-top aria-label="Back to top">{{ ui.icon('arrow-up') }}</button>
 
-
-            themeToggleBtn.addEventListener("click", function () {
-                body.classList.toggle("light-mode");
-
-                if (body.classList.contains("light-mode")) {
-                    localStorage.setItem("theme", "light");
-                    themeToggleBtn.textContent = "🌞 Light Mode";
-                } else {
-                    localStorage.setItem("theme", "dark");
-                    themeToggleBtn.textContent = "🌙 Dark Mode";
-                }
-            });
-        });
-    </script>
-
-        <!-- Report Modal -->
-        <div id="report-modal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h3>Report an Issue</h3>
-                <p>Please provide details about the issue you'd like to report.</p>
-
-                <form method="POST" action="{{ url_for('submit_report') }}" class="report-form">
-                    <div class="form-group">
-                        <label for="report_title">Issue Title</label>
-                        <input type="text" id="report_title" name="report_title" required
-                            placeholder="Brief description of the issue" class="input-field">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="report_content">Details</label>
-                        <textarea id="report_content" name="report_content" required
-                            placeholder="Please describe the issue in detail..." rows="5" class="textarea-field"></textarea>
-                    </div>
-
-                    {% if not 'user_id' in session %}
-                    <div class="form-group">
-                        <label for="report_email">Your Email</label>
-                        <input type="email" id="report_email" name="report_email" required placeholder="Your email address"
-                            class="input-field">
-                    </div>
-                    {% endif %}
-
-                    <button type="submit" class="cta-btn neon-btn">Submit Report</button>
-                </form>
-            </div>
+    <div class="toasts" id="toasts" aria-live="polite">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        {% set tone = {'danger': 'alert-circle', 'warning': 'alert-triangle', 'success': 'check-circle'}.get(category, 'info') %}
+        <div class="toast toast--{{ category }}" role="status" data-toast>
+            <span class="toast__icon">{{ ui.icon(tone) }}</span>
+            <p class="toast__msg">{{ message }}</p>
+            <button type="button" class="icon-btn icon-btn--sm toast__close" data-toast-close aria-label="Dismiss">{{ ui.icon('x') }}</button>
+            <span class="toast__progress"></span>
         </div>
+        {% endfor %}
+        {% endwith %}
+    </div>
 
-        <!-- Report Modal Script -->
-        <script>
-            // Modal functionality for report
-            const reportModal = document.getElementById('report-modal');
-            const reportBtn = document.getElementById('report-btn');
-            const closeReportModal = reportModal.querySelector('.close-modal');
+    {% include 'partials/dialogs.html' %}
 
-            reportBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                reportModal.style.display = 'block';
-            });
+    {% if config.STATIC_DEMO %}{% include 'partials/demo_templates.html' %}{% endif %}
 
-            closeReportModal.addEventListener('click', function () {
-                reportModal.style.display = 'none';
-            });
-
-            window.addEventListener('click', function (e) {
-                if (e.target === reportModal) {
-                    reportModal.style.display = 'none';
-                }
-            });
-        </script>
+    <script type="application/json" id="postfy-config">{{ {
+        'user': current_user.handle if current_user else None,
+        'demo': config.STATIC_DEMO,
+        'urls': {
+            'root': url_for('home'),
+            'home': url_for('newposts'),
+            'people': url_for('people'),
+            'notifications': url_for('notifications'),
+            'messages': url_for('messages'),
+            'bookmarks': url_for('bookmarks'),
+            'settings': url_for('settings'),
+            'createPost': url_for('create_post'),
+            'profile': url_for('user_profile', username=current_user.handle) if current_user else url_for('login'),
+            'search': url_for('search'),
+            'suggest': url_for('api_search_suggest'),
+            'counts': url_for('api_counts'),
+            'feedNew': url_for('api_feed_new'),
+            'username': url_for('api_username_available'),
+            'user': url_for('user_profile', username='__USER__'),
+            'tag': url_for('tag', name='__TAG__'),
+            'conversation': url_for('conversation', username='__USER__'),
+        }
+    }|tojson }}</script>
+    <script src="{{ asset('js/app.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

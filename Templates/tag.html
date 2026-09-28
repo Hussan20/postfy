@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% set active_nav = 'search' %}
+
+{% block title %}#{{ tag }} · Postfy{% endblock %}
+
+{% block content %}
+<section class="card tag-hero">
+    <span class="tag-hero__icon">{{ ui.icon('hash') }}</span>
+    <div>
+        <h1>#{{ tag }}</h1>
+        <p class="muted">{{ total }} post{{ 's' if total != 1 }} · Updated {{ ui.time_tag(posts[0].date_posted) if posts else 'never' }}</p>
+    </div>
+    {% if current_user %}
+    <a href="{{ url_for('create_post') }}" class="btn btn--primary btn--sm" style="margin-left:auto" data-compose data-compose-text="#{{ tag }} ">{{ ui.icon('plus', 'icon--sm') }} Post</a>
+    {% endif %}
+</section>
+
+<div class="feed" id="feed" data-feed>
+    {% include 'partials/posts.html' %}
+</div>
+
+{% if not posts %}
+<div class="card">
+    {{ ui.empty_state('hash', 'Nothing here yet', 'No posts use #' ~ tag ~ ' yet. Start the conversation!', url_for('create_post') if current_user else url_for('signup'), 'Write a post' if current_user else 'Join Postfy') }}
+</div>
+{% endif %}
+
+{{ ui.load_more(next_url) }}
+{% endblock %}

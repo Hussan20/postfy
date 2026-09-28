@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% set layout = 'wide' %}
+{% set active_nav = 'people' %}
+
+{% block title %}Explore people · Postfy{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Explore</h1>
+        <p class="page-head__sub">Find people to follow and topics to dive into</p>
+    </div>
+</div>
+
+<form action="{{ url_for('people') }}" method="GET" class="search-hero" role="search" data-live-filter>
+    <div class="input-wrap">
+        {{ ui.icon('search') }}
+        <input type="search" name="q" class="input" value="{{ q }}" placeholder="Search by name or @username" aria-label="Search people" autocomplete="off">
+    </div>
+</form>
+
+{% set tags = trending_tags(12) %}
+{% if tags and not q %}
+<h2 class="section-title">{{ ui.icon('trending-up', 'icon--sm') }} Trending topics</h2>
+<div class="tag-cloud" style="margin-bottom:8px">
+    {% for tag, n in tags %}
+    <a href="{{ url_for('tag', name=tag) }}" class="chip chip--accent">#{{ tag }} <span class="faint">{{ n }}</span></a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="section-title">{{ ui.icon('users', 'icon--sm') }} {% if q %}Results for “{{ q }}”{% else %}People on Postfy{% endif %}</h2>
+{% if users %}
+<div class="people-grid">
+    {% for person in users %}
+    <article class="card person-card" style="animation-delay: {{ loop.index0 * 30 }}ms">
+        <div class="person-card__cover" {% if person.cover_url %}style="background-image:url('{{ person.cover_url }}')"{% endif %}></div>
+        <a href="{{ url_for('user_profile', username=person.handle) }}" aria-label="{{ person.full_name }}">{{ ui.avatar(person, 'xl') }}</a>
+        <a href="{{ url_for('user_profile', username=person.handle) }}" class="person-card__name" dir="auto">{{ person.full_name }}</a>
+        <div class="person-card__handle">@{{ person.handle }}</div>
+        <p class="person-card__bio" dir="auto">{{ person.bio or 'Hey there! I’m on Postfy.' }}</p>
+        <div class="person-card__meta">{{ follower_counts.get(person.id, 0)|compact }} follower{{ 's' if follower_counts.get(person.id, 0) != 1 }}</div>
+        {{ ui.follow_button(person, 'btn--sm btn--block') }}
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    {{ ui.empty_state('search', 'No one found', 'Try a different name or username.') }}
+</div>
+{% endif %}
+{% endblock %}

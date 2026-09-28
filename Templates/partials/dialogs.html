@@ -1,0 +1,102 @@
+{% import '_macros.html' as ui %}
+{# Confirmation dialog used by forms with data-confirm #}
+<dialog class="dialog dialog--sm" id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+        <div class="dialog__head">
+            <span class="dialog__icon">{{ ui.icon('alert-triangle') }}</span>
+            <h2 class="dialog__title" id="confirm-title" data-confirm-title>Are you sure?</h2>
+        </div>
+        <p class="dialog__body" data-confirm-text></p>
+        <div class="dialog__foot">
+            <button type="submit" value="cancel" class="btn btn--ghost">Cancel</button>
+            <button type="submit" value="confirm" class="btn btn--danger" data-confirm-button>Delete</button>
+        </div>
+    </form>
+</dialog>
+
+{# Report dialog #}
+<dialog class="dialog" id="report-dialog" aria-labelledby="report-title">
+    <form method="POST" action="{{ url_for('submit_report') }}" data-report-form>
+        {{ ui.csrf() }}
+        <input type="hidden" name="post_id" value="" data-report-post-id>
+        <div class="dialog__head">
+            <h2 class="dialog__title" id="report-title" data-report-heading>Report an issue</h2>
+            <button type="button" class="icon-btn icon-btn--sm dialog__close" data-close-dialog aria-label="Close">{{ ui.icon('x') }}</button>
+        </div>
+        <div class="dialog__body">
+            <p class="text-sm" style="margin-bottom:16px" data-report-intro>Found a bug or something that shouldn't be here? Tell us and our moderators will take a look.</p>
+            <div class="field">
+                <label class="field__label" for="report_title">Summary</label>
+                <input class="input" type="text" id="report_title" name="report_title" maxlength="200" required placeholder="Brief description of the issue">
+            </div>
+            <div class="field">
+                <label class="field__label" for="report_content">Details</label>
+                <textarea class="textarea" id="report_content" name="report_content" rows="4" required placeholder="What happened? Include anything that helps us understand."></textarea>
+            </div>
+            {% if not current_user %}
+            <div class="field">
+                <label class="field__label" for="report_email">Your email</label>
+                <input class="input" type="email" id="report_email" name="report_email" required placeholder="you@example.com">
+            </div>
+            {% endif %}
+        </div>
+        <div class="dialog__foot">
+            <button type="button" class="btn btn--ghost" data-close-dialog>Cancel</button>
+            <button type="submit" class="btn btn--primary">{{ ui.icon('send', 'icon--sm') }} Submit report</button>
+        </div>
+    </form>
+</dialog>
+
+{# Keyboard shortcuts #}
+<dialog class="dialog" id="shortcuts-dialog" aria-labelledby="shortcuts-title">
+    <div class="dialog__head">
+        <h2 class="dialog__title" id="shortcuts-title">Keyboard shortcuts</h2>
+        <button type="button" class="icon-btn icon-btn--sm dialog__close" data-close-dialog aria-label="Close">{{ ui.icon('x') }}</button>
+    </div>
+    <dl class="dialog__body shortcut-list">
+        <h4>General</h4>
+        <dt>Search</dt><dd><kbd>/</kbd></dd>
+        <dt>New post</dt><dd><kbd>N</kbd></dd>
+        <dt>Toggle dark / light</dt><dd><kbd>T</kbd></dd>
+        <dt>Show this help</dt><dd><kbd>?</kbd></dd>
+        <dt>Close menus &amp; dialogs</dt><dd><kbd>Esc</kbd></dd>
+        <h4>Feed</h4>
+        <dt>Next / previous post</dt><dd><kbd>J</kbd><kbd>K</kbd></dd>
+        <dt>Like focused post</dt><dd><kbd>L</kbd></dd>
+        <dt>Comment on focused post</dt><dd><kbd>C</kbd></dd>
+        <dt>Save focused post</dt><dd><kbd>B</kbd></dd>
+        <dt>Open focused post</dt><dd><kbd>O</kbd></dd>
+        <dt>Publish post / comment</dt><dd><kbd>Ctrl</kbd><kbd>Enter</kbd></dd>
+        <h4>Go to</h4>
+        <dt>Home</dt><dd><kbd>G</kbd><kbd>H</kbd></dd>
+        <dt>Explore</dt><dd><kbd>G</kbd><kbd>E</kbd></dd>
+        <dt>Notifications</dt><dd><kbd>G</kbd><kbd>N</kbd></dd>
+        <dt>Messages</dt><dd><kbd>G</kbd><kbd>M</kbd></dd>
+        <dt>Profile</dt><dd><kbd>G</kbd><kbd>P</kbd></dd>
+        <dt>Bookmarks</dt><dd><kbd>G</kbd><kbd>B</kbd></dd>
+        <dt>Settings</dt><dd><kbd>G</kbd><kbd>S</kbd></dd>
+    </dl>
+</dialog>
+
+{# Image lightbox #}
+<dialog class="lightbox" id="lightbox" aria-label="Image preview">
+    <button type="button" class="icon-btn" data-close-dialog aria-label="Close">{{ ui.icon('x') }}</button>
+    <img src="" alt="" data-lightbox-img>
+</dialog>
+
+{# New message picker #}
+{% if current_user %}
+<dialog class="dialog dialog--sm" id="new-message-dialog" aria-labelledby="new-message-title">
+    <div class="dialog__head">
+        <h2 class="dialog__title" id="new-message-title">New message</h2>
+        <button type="button" class="icon-btn icon-btn--sm dialog__close" data-close-dialog aria-label="Close">{{ ui.icon('x') }}</button>
+    </div>
+    <div class="dialog__body" style="padding-bottom:20px">
+        <div class="input-wrap" style="margin-bottom:10px">
+            {{ ui.icon('search') }}
+            <input type="search" class="input" placeholder="Search people…" data-people-picker aria-label="Search people" autocomplete="off">
+        </div>
+        <div data-people-results class="stack" style="gap:2px"></div>
+    </div>
+</dialog>
+{% endif %}

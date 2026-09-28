@@ -120,11 +120,18 @@ def dashboard():
     result = db.session.execute(db.text("SELECT COUNT(*) FROM post"))
     total_posts = result.scalar()
 
-    # Since there's no created_at field, we'll use a placeholder for new users today
-    new_users_today = 0
+    # New users registered since midnight (UTC)
+    today_start = datetime.utcnow().replace(
+        hour=0, minute=0, second=0, microsecond=0)
+    new_users_today = db.session.execute(
+        db.text("SELECT COUNT(*) FROM user WHERE created_at >= :today"),
+        {"today": today_start}
+    ).scalar() or 0
 
-    # Get report count (placeholder for future implementation)
-    report_count = 0
+    # Reports still waiting for a moderator
+    report_count = db.session.execute(
+        db.text("SELECT COUNT(*) FROM report WHERE status = 'pending'")
+    ).scalar() or 0
 
     # Get recent user registrations (last 5)
     recent_users = db.session.execute(
@@ -320,11 +327,31 @@ def user_delete(user_id):
         flash('User not found', 'danger')
         return redirect(url_for('admin.users'))
 
-    # Delete user's posts first
+    # Delete everything attached to the user's posts, then the posts
+    post_ids = "SELECT id FROM post WHERE user_id = :user_id"
+    for table in ('comment', 'reaction', 'bookmark', 'notification'):
+        db.session.execute(
+            db.text(f"DELETE FROM {table} WHERE post_id IN ({post_ids})"),
+            {"user_id": user_id}
+        )
     db.session.execute(
         db.text("DELETE FROM post WHERE user_id = :user_id"),
         {"user_id": user_id}
     )
+
+    # Delete the user's own activity elsewhere on the site
+    cleanup = [
+        "DELETE FROM notification WHERE comment_id IN (SELECT id FROM comment WHERE user_id = :user_id)",
+        "DELETE FROM comment WHERE user_id = :user_id",
+        "DELETE FROM reaction WHERE user_id = :user_id",
+        "DELETE FROM bookmark WHERE user_id = :user_id",
+        "DELETE FROM follow WHERE follower_id = :user_id OR followed_id = :user_id",
+        "DELETE FROM notification WHERE user_id = :user_id OR actor_id = :user_id",
+        "DELETE FROM message WHERE sender_id = :user_id OR recipient_id = :user_id",
+        "UPDATE report SET user_id = NULL WHERE user_id = :user_id",
+    ]
+    for statement in cleanup:
+        db.session.execute(db.text(statement), {"user_id": user_id})
 
     # Delete user
     db.session.execute(
@@ -531,6 +558,18 @@ def post_delete(post_id):
         flash('Post not found', 'danger')
         return redirect(url_for('admin.posts'))
 
+    # Delete comments, reactions, bookmarks and notifications for the post
+    db.session.execute(
+        db.text("DELETE FROM notification WHERE comment_id IN "
+                "(SELECT id FROM comment WHERE post_id = :post_id)"),
+        {"post_id": post_id}
+    )
+    for table in ('comment', 'reaction', 'bookmark', 'notification'):
+        db.session.execute(
+            db.text(f"DELETE FROM {table} WHERE post_id = :post_id"),
+            {"post_id": post_id}
+        )
+
     # Delete post
     db.session.execute(
         db.text("DELETE FROM post WHERE id = :post_id"),
@@ -656,9 +695,9 @@ def save_theme_settings():
     """Save theme settings"""
     # Get theme settings from form
     theme_settings = {
-        'background_color': request.form.get('background_color', '#121212'),
-        'light_background_color': request.form.get('light_background_color', '#1c1c1c'),
-        'text_color': request.form.get('text_color', '#e0e0e0'),
+        'background_color': request.form.get('background_color', '#0b0d12'),
+        'light_background_color': request.form.get('light_background_color', '#151922'),
+        'text_color': request.form.get('text_color', '#e8eaf0'),
         'primary_color': request.form.get('primary_color', '#00b8f4')
     }
 
@@ -686,9 +725,9 @@ def load_theme_settings():
 
     # Default settings
     default_settings = {
-        'background_color': '#121212',
-        'light_background_color': '#1c1c1c',
-        'text_color': '#e0e0e0',
+        'background_color': '#0b0d12',
+        'light_background_color': '#151922',
+        'text_color': '#e8eaf0',
         'primary_color': '#00b8f4'
     }
 
@@ -729,14 +768,6 @@ def generate_custom_css(settings):
     --text-light: %(text_color)s;
     --neon-blue: %(primary_color)s;
     --shadow: rgba(0, 0, 0, 0.5);
-}
-
-/* Light mode overrides remain untouched */
-.light-mode {
-    --dark-background: #ffffff;
-    --light-background: #f4f4f4;
-    --text-light: #121212;
-    --shadow: rgba(0, 0, 0, 0.2);
 }
 """
 

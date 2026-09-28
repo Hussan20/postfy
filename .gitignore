@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Static demo build output (tools/build_static.py)
+_site/
+
+# User uploads created while running the app locally
+static/post_images/*
+static/cover_pics/*
+!static/post_images/.gitkeep
+!static/cover_pics/.gitkeep

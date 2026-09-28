@@ -1,0 +1,221 @@
+{# Shared UI building blocks. Import with: {% import '_macros.html' as ui %} #}
+
+{% macro icon(name, cls='') -%}
+<svg class="icon {{ cls }}" aria-hidden="true" focusable="false"><use href="{{ asset('icons.svg') }}#{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% macro avatar(user, size='md', cls='') -%}
+<span class="avatar avatar--{{ size }} {{ cls }}" style="--avatar-hue: {{ user.avatar_hue }}">
+    {%- if user.avatar_url -%}
+    <img src="{{ user.avatar_url }}" alt="" loading="lazy" decoding="async">
+    {%- else -%}
+    <span aria-hidden="true">{{ user.initials }}</span>
+    {%- endif -%}
+</span>
+{%- endmacro %}
+
+{% macro time_tag(dt) -%}
+{%- if dt -%}
+<time datetime="{{ dt|isodate }}" title="{{ dt|fulldate }}" data-relative>{{ dt|timeago }}</time>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro follow_button(user, size='btn--sm') -%}
+{%- if g.user and g.user.id != user.id -%}
+{%- set following = is_following(user.id) -%}
+<form method="POST" action="{{ url_for('toggle_follow', user_id=user.id) }}" class="inline-form" data-follow>
+    {{ csrf() }}
+    <button type="submit"
+        class="btn {{ size }} follow-btn {{ 'btn--outline is-following' if following else 'btn--primary' }}"
+        aria-pressed="{{ 'true' if following else 'false' }}" data-user-name="{{ user.first_name }}">
+        <span class="when-off">Follow</span><span class="when-on">Following</span><span class="when-hover">Unfollow</span>
+    </button>
+</form>
+{%- elif not g.user -%}
+<a href="{{ url_for('login', next=request.path) }}" class="btn {{ size }} btn--primary">Follow</a>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro user_row(user, show_bio=false, action=true) -%}
+<div class="user-row">
+    <a href="{{ url_for('user_profile', username=user.handle) }}" class="user-row__link">
+        {{ avatar(user, 'md') }}
+        <span class="user-row__info">
+            <span class="user-row__name" dir="auto">{{ user.full_name }}</span>
+            <span class="user-row__handle">@{{ user.handle }}</span>
+            {% if show_bio and user.bio %}<span class="user-row__bio" dir="auto">{{ user.bio }}</span>{% endif %}
+        </span>
+    </a>
+    {% if action %}{{ follow_button(user) }}{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro empty_state(icon_name, title, text, url=None, label=None) -%}
+<div class="empty">
+    <div class="empty__icon">{{ icon(icon_name) }}</div>
+    <h3 class="empty__title">{{ title }}</h3>
+    <p class="empty__text">{{ text }}</p>
+    {% if url %}<a href="{{ url }}" class="btn btn--primary">{{ label }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro skeleton_post() -%}
+<div class="card skeleton-post" aria-hidden="true">
+    <div class="skeleton-post__head">
+        <span class="skeleton skeleton--circle"></span>
+        <div style="flex:1" class="stack"><span class="skeleton skeleton--line" style="width:40%"></span><span class="skeleton skeleton--line" style="width:22%"></span></div>
+    </div>
+    <span class="skeleton skeleton--line" style="width:70%;height:16px"></span>
+    <span class="skeleton skeleton--line"></span>
+    <span class="skeleton skeleton--line" style="width:85%"></span>
+</div>
+{%- endmacro %}
+
+{% macro load_more(next_url, target='#feed') -%}
+{% if next_url %}
+<div class="feed-loader" data-infinite="{{ next_url }}" data-target="{{ target }}">
+    {{ skeleton_post() }}
+    <noscript><a href="{{ next_url }}" class="btn btn--outline btn--block">Load more</a></noscript>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro comment_item(c, post, hidden=false) -%}
+{%- set mine = g.user and c.user_id == g.user.id -%}
+{%- set can_delete = g.user and (mine or post.user_id == g.user.id) -%}
+<li class="comment{% if mine %} comment--mine{% endif %}" id="comment-{{ c.id }}" {% if hidden %}hidden data-extra-comment{% endif %}>
+    <a href="{{ url_for('user_profile', username=c.user.handle) }}" class="comment__avatar" aria-label="{{ c.user.full_name }}">{{ avatar(c.user, 'sm') }}</a>
+    <div class="comment__main">
+        <div class="comment__bubble">
+            <div class="comment__head">
+                <a href="{{ url_for('user_profile', username=c.user.handle) }}" class="comment__author" dir="auto">{{ c.user.full_name }}</a>
+                <span class="comment__time">{{ time_tag(c.date_created) }}</span>
+            </div>
+            <div class="comment__text" dir="auto" data-comment-text>{{ c.content|rich }}</div>
+        </div>
+        {% if mine or can_delete %}
+        <div class="comment__actions">
+            {% if mine %}
+            <a href="{{ url_for('edit_comment', comment_id=c.id) }}" data-edit-comment data-raw="{{ c.content }}">Edit</a>
+            {% endif %}
+            {% if can_delete %}
+            <form method="POST" action="{{ url_for('delete_comment', comment_id=c.id) }}" class="inline-form"
+                data-confirm="This comment will be permanently removed." data-confirm-title="Delete comment?"
+                data-confirm-label="Delete" data-ajax-remove="#comment-{{ c.id }}">
+                {{ csrf() }}
+                <button type="submit" class="is-danger">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</li>
+{%- endmacro %}
+
+{% macro post_card(post, detail=false) -%}
+{%- set author = post.user -%}
+{%- set mine = g.user and g.user.id == post.user_id -%}
+{%- set post_url = url_for('post_detail', post_id=post.id) -%}
+<article class="card post{% if mine %} post--mine{% endif %}" id="post-{{ post.id }}" data-post="{{ post.id }}" tabindex="-1">
+    <header class="post__head">
+        <a href="{{ url_for('user_profile', username=author.handle) }}" class="post__avatar" aria-label="{{ author.full_name }}">{{ avatar(author, 'md') }}</a>
+        <div class="post__meta">
+            <div class="post__byline">
+                <a href="{{ url_for('user_profile', username=author.handle) }}" class="post__author" dir="auto">{{ author.full_name }}</a>
+                <span class="post__handle">@{{ author.handle }}</span>
+            </div>
+            <div class="post__sub">
+                <a href="{{ post_url }}">{{ time_tag(post.date_posted) }}</a>
+                {% if post.is_edited %}<span class="dot"></span><span title="Edited {{ post.updated_at|fulldate }}">Edited</span>{% endif %}
+            </div>
+        </div>
+        <div class="dropdown" data-dropdown>
+            <button type="button" class="icon-btn icon-btn--sm" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Post options">{{ icon('more') }}</button>
+            <div class="dropdown__menu" role="menu">
+                <button type="button" class="dropdown__item" role="menuitem" data-copy="{{ url_for('post_detail', post_id=post.id, _external=True) }}">{{ icon('link') }} Copy link</button>
+                {% if not detail %}<a class="dropdown__item" role="menuitem" href="{{ post_url }}">{{ icon('external-link') }} Open post</a>{% endif %}
+                {% if mine %}
+                <a class="dropdown__item" role="menuitem" href="{{ url_for('edit_post', post_id=post.id) }}">{{ icon('edit') }} Edit post</a>
+                <div class="dropdown__sep"></div>
+                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" class="inline-form"
+                    data-confirm="Your post, its comments and reactions will be permanently removed."
+                    data-confirm-title="Delete this post?" data-confirm-label="Delete post"
+                    {% if detail %}data-redirect="{{ url_for('newposts') }}"{% else %}data-ajax-remove="#post-{{ post.id }}"{% endif %}>
+                    {{ csrf() }}
+                    <button type="submit" class="dropdown__item is-danger" role="menuitem">{{ icon('trash') }} Delete post</button>
+                </form>
+                {% else %}
+                {% if g.user %}<a class="dropdown__item" role="menuitem" href="{{ url_for('conversation', username=author.handle) }}">{{ icon('mail') }} Message @{{ author.handle }}</a>{% endif %}
+                <button type="button" class="dropdown__item" role="menuitem" data-report-post="{{ post.id }}" data-report-title="{{ post.title }}">{{ icon('flag') }} Report post</button>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <div class="post__content">
+        <h2 class="post__title" dir="auto">{% if detail %}{{ post.title }}{% else %}<a href="{{ post_url }}">{{ post.title }}</a>{% endif %}</h2>
+        <div class="post__body" dir="auto" {% if not detail %}data-clamp{% endif %}>{{ post.content|rich }}</div>
+    </div>
+
+    {% if post.image %}
+    <figure class="post__media" data-media>
+        <img src="{{ post.image_url }}" alt="Image shared with “{{ post.title }}”" loading="lazy" decoding="async" data-lightbox>
+    </figure>
+    {% endif %}
+
+    <footer class="post__actions">
+        {% for kind, label, icon_name in [('like', 'Like', 'thumbs-up'), ('dislike', 'Dislike', 'thumbs-down')] %}
+        {% set active = post.my_reaction == kind %}
+        {% if g.user %}
+        <form method="POST" action="{{ url_for('react_to_post', reaction_type=kind, post_id=post.id) }}" class="inline-form" data-react>
+            {{ csrf() }}
+            <button type="submit" class="action action--{{ kind }}{% if active %} is-active{% endif %}" aria-pressed="{{ 'true' if active else 'false' }}" aria-label="{{ label }}" title="{{ label }}" data-reaction="{{ kind }}">
+                {{ icon(icon_name) }}<span class="action__count" data-count="{{ kind }}">{{ post[kind ~ '_count']|compact }}</span>
+            </button>
+        </form>
+        {% else %}
+        <a href="{{ url_for('login', next=post_url) }}" class="action action--{{ kind }}" aria-label="{{ label }}">{{ icon(icon_name) }}<span class="action__count">{{ post[kind ~ '_count']|compact }}</span></a>
+        {% endif %}
+        {% endfor %}
+
+        <a href="{{ post_url }}#comments-{{ post.id }}" class="action action--comment" data-comment-toggle aria-label="Comments" title="Comment">
+            {{ icon('message') }}<span class="action__count" data-count="comments">{{ post.comment_count|compact }}</span>
+        </a>
+
+        {% if g.user %}
+        <form method="POST" action="{{ url_for('toggle_bookmark', post_id=post.id) }}" class="inline-form" data-bookmark>
+            {{ csrf() }}
+            <button type="submit" class="action action--save{% if post.is_bookmarked %} is-active{% endif %}" aria-pressed="{{ 'true' if post.is_bookmarked else 'false' }}" aria-label="Save" title="Save">{{ icon('bookmark') }}</button>
+        </form>
+        {% endif %}
+        <button type="button" class="action action--share{% if not g.user %} action--push{% endif %}" data-share="{{ url_for('post_detail', post_id=post.id, _external=True) }}" data-share-title="{{ post.title }}" aria-label="Share" title="Share">{{ icon('share') }}<span class="action__label">Share</span></button>
+    </footer>
+
+    {%- set comments = post.comment_list -%}
+    {%- set hidden_count = comments|length - 2 if (not detail and comments|length > 2) else 0 -%}
+    <section class="comments{% if not detail and not comments %} is-collapsed{% endif %}" id="comments-{{ post.id }}" data-comments aria-label="Comments">
+        {% if hidden_count > 0 %}
+        <button type="button" class="comments__more" data-show-comments>View {{ hidden_count }} more comment{{ 's' if hidden_count != 1 }}</button>
+        {% endif %}
+        <ul class="comments__list" data-comment-list>
+            {%- for c in comments %}{{ comment_item(c, post, hidden=loop.index0 < hidden_count) }}{% endfor -%}
+        </ul>
+        {% if g.user %}
+        <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}" class="comment-form" data-comment-form>
+            {{ csrf() }}
+            {{ avatar(g.user, 'sm') }}
+            <div class="comment-form__field">
+                <textarea name="comment_content" rows="1" placeholder="Write a comment…" maxlength="{{ MAX_COMMENT_LENGTH }}" required data-autogrow data-enter-submit data-mentions dir="auto" aria-label="Write a comment"></textarea>
+                <button type="submit" class="send-btn" aria-label="Post comment">{{ icon('send') }}</button>
+            </div>
+        </form>
+        {% else %}
+        <p class="comments__guest"><a href="{{ url_for('login', next=post_url) }}">Sign in</a> or <a href="{{ url_for('signup') }}">create an account</a> to join the conversation.</p>
+        {% endif %}
+    </section>
+</article>
+{%- endmacro %}

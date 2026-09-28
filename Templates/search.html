@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% set active_nav = 'search' %}
+
+{% block title %}{% if q %}“{{ q }}” · {% endif %}Search · Postfy{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Search</h1>
+        <p class="page-head__sub">Find people, posts and hashtags</p>
+    </div>
+</div>
+
+<form action="{{ url_for('search') }}" method="GET" class="search-hero" role="search">
+    <div class="input-wrap">
+        {{ ui.icon('search') }}
+        <input type="search" name="q" class="input" value="{{ q }}" placeholder="Search Postfy" aria-label="Search" autofocus autocomplete="off">
+    </div>
+    <input type="hidden" name="type" value="{{ kind }}">
+</form>
+
+{% if q %}
+<nav class="tabs" aria-label="Result type">
+    {% for key, label, icon_name in [('top', 'Top', 'star'), ('posts', 'Posts', 'file-text'), ('people', 'People', 'users'), ('tags', 'Tags', 'hash')] %}
+    <a href="{{ url_for('search', q=q, type=key) }}" class="tab{% if kind == key %} is-active{% endif %}">{{ ui.icon(icon_name) }} {{ label }}</a>
+    {% endfor %}
+</nav>
+
+{% if not users and not posts and not tags %}
+<div class="card">{{ ui.empty_state('search', 'No results for “' ~ q ~ '”', 'Try searching for something else, or check the spelling.') }}</div>
+{% endif %}
+
+{% if users %}
+<h2 class="section-title">People {% if kind == 'top' %}<a href="{{ url_for('search', q=q, type='people') }}">See all</a>{% endif %}</h2>
+<div class="card list-card">
+    {% for person in users %}{{ ui.user_row(person, show_bio=true) }}{% endfor %}
+</div>
+{% endif %}
+
+{% if tags %}
+<h2 class="section-title">Hashtags</h2>
+<div class="tag-cloud">
+    {% for tag, n in tags %}
+    <a href="{{ url_for('tag', name=tag) }}" class="chip chip--accent">#{{ tag|highlight(q.lstrip('#')) }} <span class="faint">{{ n }}</span></a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if posts %}
+<h2 class="section-title">Posts {% if kind == 'top' %}<a href="{{ url_for('search', q=q, type='posts') }}">See all</a>{% endif %}</h2>
+<div class="feed">{% include 'partials/posts.html' %}</div>
+{% endif %}
+
+{% else %}
+<div class="card card--pad">
+    <h2 class="card__title">Try searching for</h2>
+    <p class="card__sub">People by name or @username, words in posts, or #hashtags.</p>
+    <div class="tag-cloud">
+        {% for tag, n in trending_tags(10) %}
+        <a href="{{ url_for('tag', name=tag) }}" class="chip chip--accent">#{{ tag }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

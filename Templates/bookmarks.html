@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set active_nav = 'bookmarks' %}
+
+{% block title %}Bookmarks · Postfy{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Bookmarks</h1>
+        <p class="page-head__sub">Posts you've saved for later · only you can see this</p>
+    </div>
+</div>
+
+<div class="feed" id="feed" data-feed data-bookmarks-page>
+    {% include 'partials/posts.html' %}
+</div>
+
+<div class="card" data-empty-bookmarks {% if posts %}hidden{% endif %}>
+    {{ ui.empty_state('bookmark', 'No bookmarks yet', 'Tap the bookmark icon on any post to save it here for later.', url_for('newposts'), 'Browse the feed') }}
+</div>
+
+{{ ui.load_more(next_url) }}
+{% endblock %}

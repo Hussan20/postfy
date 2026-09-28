@@ -26,6 +26,7 @@
             <p class="settings-description">Customize the appearance of the main site.</p>
 
             <form method="POST" action="{{ url_for('admin.save_theme_settings') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-section">
                     <h4>Color Scheme</h4>
 
@@ -34,9 +35,9 @@
                             <label for="background_color">Background Color</label>
                             <div class="color-input-wrapper">
                                 <input type="color" id="background_color" name="background_color"
-                                    value="{{ theme_settings.get('background_color', '#121212') }}">
+                                    value="{{ theme_settings.get('background_color', '#0b0d12') }}">
                                 <input type="text" id="background_color_text"
-                                    value="{{ theme_settings.get('background_color', '#121212') }}"
+                                    value="{{ theme_settings.get('background_color', '#0b0d12') }}"
                                     class="color-text-input">
                             </div>
                             <span class="setting-hint">Primary background color</span>
@@ -46,9 +47,9 @@
                             <label for="light_background_color">Light Background Color</label>
                             <div class="color-input-wrapper">
                                 <input type="color" id="light_background_color" name="light_background_color"
-                                    value="{{ theme_settings.get('light_background_color', '#1c1c1c') }}">
+                                    value="{{ theme_settings.get('light_background_color', '#151922') }}">
                                 <input type="text" id="light_background_color_text"
-                                    value="{{ theme_settings.get('light_background_color', '#1c1c1c') }}"
+                                    value="{{ theme_settings.get('light_background_color', '#151922') }}"
                                     class="color-text-input">
                             </div>
                             <span class="setting-hint">Secondary background color</span>
@@ -60,9 +61,9 @@
                             <label for="text_color">Text Color</label>
                             <div class="color-input-wrapper">
                                 <input type="color" id="text_color" name="text_color"
-                                    value="{{ theme_settings.get('text_color', '#e0e0e0') }}">
+                                    value="{{ theme_settings.get('text_color', '#e8eaf0') }}">
                                 <input type="text" id="text_color_text"
-                                    value="{{ theme_settings.get('text_color', '#e0e0e0') }}" class="color-text-input">
+                                    value="{{ theme_settings.get('text_color', '#e8eaf0') }}" class="color-text-input">
                             </div>
                             <span class="setting-hint">Primary text color</span>
                         </div>
@@ -413,14 +414,14 @@
 
         // Reset to defaults
         document.getElementById('reset-theme-button').addEventListener('click', function () {
-            document.getElementById('background_color').value = '#121212';
-            document.getElementById('background_color_text').value = '#121212';
+            document.getElementById('background_color').value = '#0b0d12';
+            document.getElementById('background_color_text').value = '#0b0d12';
 
-            document.getElementById('light_background_color').value = '#1c1c1c';
-            document.getElementById('light_background_color_text').value = '#1c1c1c';
+            document.getElementById('light_background_color').value = '#151922';
+            document.getElementById('light_background_color_text').value = '#151922';
 
-            document.getElementById('text_color').value = '#e0e0e0';
-            document.getElementById('text_color_text').value = '#e0e0e0';
+            document.getElementById('text_color').value = '#e8eaf0';
+            document.getElementById('text_color_text').value = '#e8eaf0';
 
             document.getElementById('primary_color').value = '#00b8f4';
             document.getElementById('primary_color_text').value = '#00b8f4';

@@ -1,0 +1,64 @@
+# Tests Postfy and publishes the live demo to GitHub Pages.
+#
+# One-time setup: repository Settings → Pages → "Build and deployment" →
+# Source: "GitHub Actions". After that, every push to main updates
+# https://<owner>.github.io/<repo>/ automatically.
+name: Live demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover tests -v
+
+      - name: Build static demo
+        env:
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          if [[ "${REPO,,}" == "${OWNER,,}.github.io" ]]; then BASE=""; else BASE="/$REPO"; fi
+          python tools/build_static.py --out _site --base "$BASE" --site-url "https://${OWNER,,}.github.io"
+
+      - name: Upload site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

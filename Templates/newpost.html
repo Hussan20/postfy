@@ -1,196 +1,69 @@
 {% extends "base.html" %}
+{% set active_nav = 'newposts' %}
 
-{% block title %}Latest Posts - Postfy{% endblock %}
+{% block title %}Home · Postfy{% endblock %}
 
 {% block content %}
-<section class="newpost-section">
-    <div class="newpost-header">
-        <h2>Latest Posts</h2>
-        <p>Here are the latest posts shared by users.</p>
+<div class="page-head">
+    <div>
+        <h1 class="page-head__title">Home</h1>
+        <p class="page-head__sub">What's happening in your community</p>
     </div>
+</div>
 
-    <!-- Display flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="flash-container">
-        {% for category, message in messages %}
-        <div class="flash-message flash-{{ category }}">
-            {{ message }}
+{% if not onboarding.complete %}
+<section class="card onboarding" data-onboarding aria-labelledby="onboarding-title">
+    <div class="onboarding__head">
+        <span class="checklist__icon">{{ ui.icon('sparkles') }}</span>
+        <div>
+            <h2 id="onboarding-title">Get the most out of Postfy</h2>
+            <p class="muted text-sm">{{ onboarding.done }} of {{ onboarding.total }} steps done</p>
         </div>
+        <button type="button" class="icon-btn icon-btn--sm" style="margin-left:auto" data-dismiss-onboarding aria-label="Hide checklist">{{ ui.icon('x') }}</button>
+    </div>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="{{ onboarding.total }}" aria-valuenow="{{ onboarding.done }}">
+        <span style="width: {{ (onboarding.done / onboarding.total * 100)|round }}%"></span>
+    </div>
+    <ul class="checklist">
+        {% for step in onboarding.steps %}
+        <li class="{{ 'is-done' if step.done }}">
+            <a href="{{ step.url }}" {% if step.label == 'Share your first post' %}data-compose{% endif %}>
+                <span class="checklist__icon">{{ ui.icon('check' if step.done else step.icon, 'icon--sm') }}</span>{{ step.label }}
+            </a>
+        </li>
         {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
-
-    <!-- Loop through posts dynamically -->
-    <div class="posts-container">
-        {% for post in posts %}
-        <div class="post {% if post.user_id == current_user_id %}my-post{% endif %}">
-            <div class="post-content-wrapper">
-                <h3>{{ post.title }}</h3>
-                <p>{{ post.content }}</p>
-            </div>
-            <div class="post-meta">
-                <div class="post-info">
-                    <div class="post-author-info">
-                        <div class="post-avatar">
-                            {% if post.profile_picture and post.profile_picture != 'default.jpg' %}
-                            <img src="{{ url_for('static', filename='profile_pics/' + post.profile_picture) }}"
-                                alt="{{ post.first_name }}'s Profile Picture">
-                            {% else %}
-                            <!-- Fallback to UI Avatars -->
-                            <img src="https://ui-avatars.com/api/?name={{ post.first_name }}+{{ post.last_name }}&background=random&color=fff&size=128"
-                                alt="{{ post.first_name }}'s Profile Picture">
-                            {% endif %}
-                        </div>
-                        <span class="post-author">
-                            {% if post.first_name and post.last_name %}
-                            {{ post.first_name }} {{ post.last_name }}
-                            {% else %}
-                            Unknown User
-                            {% endif %}
-                        </span>
-                    </div>
-                    <span class="post-date">
-                        {% if post.date_posted %}
-                        {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
-                        {% else %}
-                        Unknown Date
-                        {% endif %}
-                    </span>
-
-                    <!-- Reaction buttons -->
-                    <div class="post-reactions">
-                        <!-- Like button -->
-                        <form method="POST"
-                            action="{{ url_for('react_to_post', reaction_type='like', post_id=post.id) }}"
-                            class="reaction-form">
-                            <button type="submit"
-                                class="reaction-btn like-btn {% if post.user_reaction == 'like' %}active{% endif %}">
-                                <span class="reaction-icon">👍</span>
-                                <span class="reaction-count">{{ post.like_count }}</span>
-                            </button>
-                        </form>
-
-                        <!-- Dislike button -->
-                        <form method="POST"
-                            action="{{ url_for('react_to_post', reaction_type='dislike', post_id=post.id) }}"
-                            class="reaction-form">
-                            <button type="submit"
-                                class="reaction-btn dislike-btn {% if post.user_reaction == 'dislike' %}active{% endif %}">
-                                <span class="reaction-icon">👎</span>
-                                <span class="reaction-count">{{ post.dislike_count }}</span>
-                            </button>
-                        </form>
-
-                        <!-- Comment count indicator -->
-                        <div class="comment-count-indicator">
-                            <span class="comment-icon">💬</span>
-                            <span class="comment-count">{{ post.comment_count }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Compare the post user_id with the current user's ID -->
-                {% if post.user_id == current_user_id %}
-                <div class="post-actions">
-                    <a href="{{ url_for('edit_post', post_id=post.id) }}" class="action-link edit-link">
-                        <span class="action-icon">✏️</span> Edit
-                    </a>
-                    <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" class="delete-form"
-                        onsubmit="return confirm('Are you sure you want to delete this post?');">
-                        <button type="submit" class="action-link delete-link">
-                            <span class="action-icon">🗑️</span> Delete
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
-            </div>
-
-            <!-- Comments Section -->
-            <div class="comments-section">
-                <h4 class="comments-title">
-                    <span class="comments-icon">💬</span>
-                    Comments ({{ post.comment_count }})
-                </h4>
-
-                <!-- Comment Form -->
-                <form method="POST" action="{{ url_for('add_comment', post_id=post.id) }}" class="comment-form">
-                    <div class="comment-form-container">
-                        <textarea name="comment_content" placeholder="Write a comment..." required
-                            class="comment-textarea"></textarea>
-                        <button type="submit" class="comment-submit-btn">
-                            <span class="comment-submit-icon">📤</span>
-                            Post
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Comments List -->
-                <div class="comments-list">
-                    {% if post.comments %}
-                    {% for comment in post.comments %}
-                    <div class="comment {% if comment.user_id == current_user_id %}my-comment{% endif %}">
-                        <div class="comment-header">
-                            <div class="comment-author-info">
-                                <div class="comment-avatar">
-                                    {% if comment.profile_picture and comment.profile_picture != 'default.jpg' %}
-                                    <img src="{{ url_for('static', filename='profile_pics/' + comment.profile_picture) }}"
-                                        alt="{{ comment.first_name }}'s Profile Picture">
-                                    {% else %}
-                                    <img src="https://ui-avatars.com/api/?name={{ comment.first_name }}+{{ comment.last_name }}&background=random&color=fff&size=128"
-                                        alt="{{ comment.first_name }}'s Profile Picture">
-                                    {% endif %}
-                                </div>
-                                <div class="comment-meta">
-                                    <span class="comment-author">{{ comment.first_name }} {{ comment.last_name }}</span>
-                                    <span class="comment-date">{{ comment.date_created.strftime('%Y-%m-%d %H:%M')
-                                        }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Comment Actions -->
-                            {% if comment.user_id == current_user_id %}
-                            <div class="comment-actions">
-                                <a href="{{ url_for('edit_comment', comment_id=comment.id) }}"
-                                    class="comment-action edit-comment">
-                                    <span class="action-icon">✏️</span>
-                                </a>
-                                <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}"
-                                    class="delete-comment-form" onsubmit="return confirm('Delete this comment?');">
-                                    <button type="submit" class="comment-action delete-comment">
-                                        <span class="action-icon">🗑️</span>
-                                    </button>
-                                </form>
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="comment-content">
-                            {{ comment.content }}
-                        </div>
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="no-comments">
-                        <p>No comments yet. Be the first to comment!</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="empty-posts">
-            <div class="empty-icon">📝</div>
-            <p>No posts yet. Be the first to create one!</p>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Button to create a new post -->
-    <div class="cta-buttons">
-        <a href="{{ url_for('create_post') }}" class="cta-btn create-post-btn">
-            <span>✨</span> Create a New Post
-        </a>
-    </div>
+    </ul>
 </section>
+{% endif %}
+
+{% include 'partials/composer.html' %}
+
+<nav class="tabs" aria-label="Feed">
+    <a href="{{ url_for('newposts', tab='latest') }}" class="tab{% if tab == 'latest' %} is-active{% endif %}" {% if tab == 'latest' %}aria-current="page"{% endif %}>{{ ui.icon('clock') }} Latest</a>
+    <a href="{{ url_for('newposts', tab='following') }}" class="tab{% if tab == 'following' %} is-active{% endif %}" {% if tab == 'following' %}aria-current="page"{% endif %}>{{ ui.icon('users') }} Following</a>
+    <a href="{{ url_for('newposts', tab='popular') }}" class="tab{% if tab == 'popular' %} is-active{% endif %}" {% if tab == 'popular' %}aria-current="page"{% endif %}>{{ ui.icon('flame') }} Popular</a>
+</nav>
+
+<div class="new-posts-pill" data-new-posts hidden>
+    <a href="{{ url_for('newposts', tab=tab) }}" class="btn btn--primary btn--sm">{{ ui.icon('arrow-up', 'icon--sm') }} <span data-new-posts-label>New posts</span></a>
+</div>
+
+<div class="feed" id="feed" data-feed {% if tab != 'popular' %}data-prepend-new{% endif %} data-latest-id="{{ latest_id }}">
+    {% include 'partials/posts.html' %}
+</div>
+
+{% if not posts %}
+<div class="card">
+    {% if tab == 'following' %}
+    {{ ui.empty_state('users', 'Your following feed is quiet', 'Follow people to see their posts here. Here are some ideas to get you started.', url_for('people'), 'Find people to follow') }}
+    {% else %}
+    {{ ui.empty_state('feather', 'No posts yet', 'Be the first to share something with the community!', url_for('create_post'), 'Write the first post') }}
+    {% endif %}
+</div>
+{% endif %}
+
+{{ ui.load_more(next_url) }}
+{% if posts and not next_url %}
+<div class="feed-end" data-feed-end>{{ ui.icon('check-circle') }}<strong>You're all caught up</strong><span>Check back later for new posts.</span></div>
+{% endif %}
 {% endblock %}

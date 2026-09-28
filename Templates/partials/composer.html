@@ -1,0 +1,42 @@
+{% import '_macros.html' as ui %}
+{# Post composer. Include with `form` (dict with title/content) available. #}
+{%- set form = form|default({}) -%}
+<form class="card composer" method="POST" action="{{ url_for('create_post') }}" enctype="multipart/form-data"
+    data-composer data-draft {% if composer_ajax|default(true) %}data-ajax-post{% endif %} aria-label="Create a post">
+    {{ ui.csrf() }}
+    <div class="composer__row">
+        <a href="{{ url_for('user_profile', username=current_user.handle) }}" aria-label="Your profile">{{ ui.avatar(current_user, 'md') }}</a>
+        <div class="composer__fields">
+            <label class="sr-only" for="post_title">Post title</label>
+            <input class="composer__title" id="post_title" name="post_title" type="text" placeholder="Give your post a title"
+                maxlength="{{ MAX_TITLE_LENGTH }}" required dir="auto" value="{{ form.get('title', '') }}" autocomplete="off">
+            <label class="sr-only" for="post_content">Post content</label>
+            <textarea class="composer__text" id="post_content" name="post_content" rows="{{ rows|default(2) }}"
+                placeholder="What's on your mind, {{ current_user.first_name }}?" maxlength="{{ MAX_POST_LENGTH }}" required
+                dir="auto" data-autogrow data-mentions data-counter>{{ form.get('content', '') }}</textarea>
+            <div class="composer__preview" data-image-preview hidden>
+                <img src="" alt="Selected image preview">
+                <button type="button" class="icon-btn icon-btn--sm" data-remove-image aria-label="Remove image">{{ ui.icon('x') }}</button>
+            </div>
+        </div>
+    </div>
+    <div class="composer__toolbar">
+        <div class="composer__tools">
+            <label class="tool-btn" title="Add a photo" aria-label="Add a photo">
+                {{ ui.icon('image') }}
+                <input type="file" name="post_image" accept="image/png,image/jpeg,image/gif,image/webp" hidden data-image-input>
+            </label>
+            <div style="position:relative">
+                <button type="button" class="tool-btn" data-emoji-toggle title="Add emoji" aria-label="Add emoji" aria-expanded="false">{{ ui.icon('smile') }}</button>
+            </div>
+            <button type="button" class="tool-btn" data-insert="#" title="Add a hashtag" aria-label="Add a hashtag">{{ ui.icon('hash') }}</button>
+            <button type="button" class="tool-btn" data-insert="@" title="Mention someone" aria-label="Mention someone">{{ ui.icon('at-sign') }}</button>
+        </div>
+        <div class="composer__submit">
+            <span class="composer__status" data-draft-status aria-live="polite"></span>
+            <span class="char-ring" data-char-ring title="Characters used" style="--p:0"><span></span></span>
+            <button type="submit" class="btn btn--primary" data-submit>{{ submit_label|default('Post') }}</button>
+        </div>
+    </div>
+    <p class="composer__hint">Use <strong>#hashtags</strong> and <strong>@mentions</strong> · <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to post</p>
+</form>

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set active_nav = 'newposts' %}
+
+{% block title %}{{ post.title }} · Postfy{% endblock %}
+{% block description %}{{ post.content|truncate(150) }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+    <a href="{{ url_for('newposts') if current_user else url_for('home') }}" class="icon-btn" data-back aria-label="Back">{{ ui.icon('arrow-left') }}</a>
+    <div>
+        <h1 class="page-head__title">Post</h1>
+        <p class="page-head__sub">by @{{ post.user.handle }}</p>
+    </div>
+</div>
+
+<div class="post-detail">
+    {{ ui.post_card(post, detail=true) }}
+</div>
+
+{% if more_posts %}
+<h2 class="section-title">More from {{ post.user.first_name }} <a href="{{ url_for('user_profile', username=post.user.handle) }}">View profile</a></h2>
+<div class="card list-card">
+    {% for p in more_posts %}
+    <a href="{{ url_for('post_detail', post_id=p.id) }}" class="user-row" style="padding:14px 20px;border-bottom:1px solid var(--border);color:var(--text);text-decoration:none">
+        <span class="user-row__info" style="flex:1">
+            <span class="user-row__name" dir="auto">{{ p.title }}</span>
+            <span class="user-row__bio" dir="auto">{{ p.content|truncate(120) }}</span>
+        </span>
+        <span class="faint text-xs nowrap">{{ ui.time_tag(p.date_posted) }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block sidebar_right %}
+<section class="side-card">
+    <div class="user-row" style="margin-bottom:12px">
+        <a href="{{ url_for('user_profile', username=post.user.handle) }}" class="user-row__link">
+            {{ ui.avatar(post.user, 'lg') }}
+            <span class="user-row__info">
+                <span class="user-row__name" dir="auto">{{ post.user.full_name }}</span>
+                <span class="user-row__handle">@{{ post.user.handle }}</span>
+            </span>
+        </a>
+    </div>
+    {% if post.user.bio %}<p class="text-sm muted" dir="auto" style="margin-bottom:14px">{{ post.user.bio }}</p>{% endif %}
+    <div class="mini-stats" style="margin-bottom:14px">
+        <a href="{{ url_for('user_profile', username=post.user.handle) }}"><strong>{{ author_stats.posts|compact }}</strong>Posts</a>
+        <a href="{{ url_for('follow_list', username=post.user.handle, kind='followers') }}"><strong data-follower-count="{{ post.user.id }}">{{ author_stats.followers|compact }}</strong>Followers</a>
+        <a href="{{ url_for('follow_list', username=post.user.handle, kind='following') }}"><strong>{{ author_stats.following|compact }}</strong>Following</a>
+    </div>
+    {% if current_user and current_user.id != post.user.id %}
+    <div class="row">
+        {{ ui.follow_button(post.user, 'btn--sm') }}
+        <a href="{{ url_for('conversation', username=post.user.handle) }}" class="btn btn--outline btn--sm">{{ ui.icon('mail', 'icon--sm') }} Message</a>
+    </div>
+    {% elif not current_user %}
+    {{ ui.follow_button(post.user, 'btn--sm btn--block') }}
+    {% endif %}
+</section>
+{% include 'partials/sidebar_right.html' %}
+{% endblock %}

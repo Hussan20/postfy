@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% set layout = 'wide' %}
+{% set active_nav = 'messages' %}
+
+{% block title %}{% if partner %}{{ partner.full_name }} · {% endif %}Messages · Postfy{% endblock %}
+
+{% block content %}
+<div class="card messenger{% if partner %} has-partner{% endif %}" data-messenger>
+    <aside class="messenger__list" aria-label="Conversations">
+        <div class="messenger__head">
+            <h1>Messages</h1>
+            <button type="button" class="icon-btn" style="margin-left:auto" data-open-dialog="new-message-dialog" aria-label="New message" title="New message">{{ ui.icon('edit') }}</button>
+        </div>
+        <div class="messenger__filter">
+            <input type="search" class="input" placeholder="Search conversations" aria-label="Search conversations" data-convo-filter>
+        </div>
+        {% if conversations %}
+        <ul class="convo-list">
+            {% for c in conversations %}
+            <li>
+                <a href="{{ url_for('conversation', username=c.user.handle) }}"
+                    class="convo{% if partner and partner.id == c.user.id %} is-active{% endif %}{% if c.unread %} has-unread{% endif %}"
+                    data-convo-name="{{ c.user.full_name|lower }} {{ c.user.handle }}">
+                    {{ ui.avatar(c.user, 'md') }}
+                    <span class="convo__body">
+                        <span class="convo__top">
+                            <span class="convo__name" dir="auto">{{ c.user.full_name }}</span>
+                            <span class="convo__time">{{ ui.time_tag(c.last.created_at) }}</span>
+                        </span>
+                        <span class="convo__preview" dir="auto">{% if c.last.sender_id == current_user.id %}You: {% endif %}{{ c.last.body }}</span>
+                    </span>
+                    {% if c.unread %}<span class="convo__unread">{{ c.unread }}</span>{% endif %}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty" style="padding:28px 18px">
+            <div class="empty__icon">{{ ui.icon('inbox') }}</div>
+            <h3 class="empty__title">No conversations yet</h3>
+            <p class="empty__text text-sm">Start a private conversation with anyone on Postfy.</p>
+            <button type="button" class="btn btn--primary btn--sm" data-open-dialog="new-message-dialog">{{ ui.icon('edit', 'icon--sm') }} New message</button>
+        </div>
+        {% endif %}
+    </aside>
+
+    <section class="thread" aria-label="Conversation">
+        {% if partner %}
+        <header class="thread__head">
+            <a href="{{ url_for('messages') }}" class="icon-btn thread__back" aria-label="Back to conversations">{{ ui.icon('arrow-left') }}</a>
+            <a href="{{ url_for('user_profile', username=partner.handle) }}" class="user-row__link">
+                {{ ui.avatar(partner, 'md') }}
+                <span class="user-row__info">
+                    <span class="user-row__name" dir="auto">{{ partner.full_name }}</span>
+                    <span class="user-row__handle">@{{ partner.handle }}</span>
+                </span>
+            </a>
+            <span class="spacer"></span>
+            <a href="{{ url_for('user_profile', username=partner.handle) }}" class="btn btn--outline btn--sm">View profile</a>
+        </header>
+
+        <div class="thread__scroll" data-thread data-partner="{{ partner.handle }}"
+            data-poll-url="{{ url_for('api_conversation', username=partner.handle) }}"
+            data-last-id="{{ thread[-1].id if thread else 0 }}">
+            <div class="thread__intro">
+                {{ ui.avatar(partner, 'xl') }}
+                <strong dir="auto">{{ partner.full_name }}</strong>
+                <span>@{{ partner.handle }}{% if partner.bio %} · <span dir="auto">{{ partner.bio|truncate(80) }}</span>{% endif %}</span>
+                <span class="faint text-xs row" style="gap:6px">{{ ui.icon('lock', 'icon--sm') }} Messages are private between you two.</span>
+            </div>
+            {% set ns = namespace(day=None) %}
+            {% for m in thread %}
+            {% set day = m.created_at.strftime('%Y-%m-%d') %}
+            {% if day != ns.day %}
+            <div class="thread__day">{{ m.created_at.strftime('%b') }} {{ m.created_at.day }}, {{ m.created_at.year }}</div>
+            {% set ns.day = day %}
+            {% endif %}
+            {% include 'partials/message.html' %}
+            {% endfor %}
+            {% set last_mine = thread|selectattr('sender_id', 'equalto', current_user.id)|list|last %}
+            <div class="msg__seen" style="align-self:flex-end" data-seen {% if not (last_mine and last_mine.is_read and thread[-1].id == last_mine.id) %}hidden{% endif %}>{{ ui.icon('check', 'icon--sm') }} Seen</div>
+        </div>
+
+        <form method="POST" action="{{ url_for('conversation', username=partner.handle) }}" class="thread__composer" data-message-form>
+            {{ ui.csrf() }}
+            <div class="comment-form__field">
+                <textarea name="body" rows="1" placeholder="Message {{ partner.first_name }}…" maxlength="{{ MAX_MESSAGE_LENGTH }}" required data-autogrow data-enter-submit dir="auto" aria-label="Write a message" autofocus></textarea>
+                <button type="submit" class="send-btn" aria-label="Send">{{ ui.icon('send') }}</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="thread__empty">
+            {{ ui.empty_state('message', 'Your messages', 'Pick a conversation on the left, or start a new one with someone you follow.') }}
+            <button type="button" class="btn btn--primary" data-open-dialog="new-message-dialog" style="margin-top:-10px">{{ ui.icon('edit', 'icon--sm') }} New message</button>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
